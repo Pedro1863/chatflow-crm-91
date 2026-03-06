@@ -75,10 +75,10 @@ export function useContact(id: string | null) {
 export function useUpdateContact() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<Contact> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: unknown }) => {
       const { data, error } = await supabase
         .from("contacts")
-        .update(updates)
+        .update(updates as any)
         .eq("id", id)
         .select()
         .single();
