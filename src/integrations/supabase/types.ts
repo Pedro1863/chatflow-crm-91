@@ -14,7 +14,190 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      contacts: {
+        Row: {
+          conversion_probability:
+            | Database["public"]["Enums"]["conversion_probability"]
+            | null
+          converted_at: string | null
+          created_at: string
+          first_contact_at: string
+          id: string
+          last_message_at: string | null
+          name: string | null
+          notes: string | null
+          phone: string
+          product_interest: string | null
+          purchase_preference:
+            | Database["public"]["Enums"]["purchase_preference"]
+            | null
+          sale_stage: Database["public"]["Enums"]["sale_stage"] | null
+          updated_at: string
+        }
+        Insert: {
+          conversion_probability?:
+            | Database["public"]["Enums"]["conversion_probability"]
+            | null
+          converted_at?: string | null
+          created_at?: string
+          first_contact_at?: string
+          id?: string
+          last_message_at?: string | null
+          name?: string | null
+          notes?: string | null
+          phone: string
+          product_interest?: string | null
+          purchase_preference?:
+            | Database["public"]["Enums"]["purchase_preference"]
+            | null
+          sale_stage?: Database["public"]["Enums"]["sale_stage"] | null
+          updated_at?: string
+        }
+        Update: {
+          conversion_probability?:
+            | Database["public"]["Enums"]["conversion_probability"]
+            | null
+          converted_at?: string | null
+          created_at?: string
+          first_contact_at?: string
+          id?: string
+          last_message_at?: string | null
+          name?: string | null
+          notes?: string | null
+          phone?: string
+          product_interest?: string | null
+          purchase_preference?:
+            | Database["public"]["Enums"]["purchase_preference"]
+            | null
+          sale_stage?: Database["public"]["Enums"]["sale_stage"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_message_preview: string | null
+          unread_count: number | null
+          updated_at: string
+          whatsapp_chat_id: string | null
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_message_preview?: string | null
+          unread_count?: number | null
+          updated_at?: string
+          whatsapp_chat_id?: string | null
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_message_preview?: string | null
+          unread_count?: number | null
+          updated_at?: string
+          whatsapp_chat_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          contact_id: string
+          content: string
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          message_type: string | null
+          status: string | null
+          whatsapp_message_id: string | null
+        }
+        Insert: {
+          contact_id: string
+          content: string
+          conversation_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          message_type?: string | null
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Update: {
+          contact_id?: string
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          message_type?: string | null
+          status?: string | null
+          whatsapp_message_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales_events: {
+        Row: {
+          changed_at: string
+          contact_id: string
+          from_stage: Database["public"]["Enums"]["sale_stage"] | null
+          id: string
+          to_stage: Database["public"]["Enums"]["sale_stage"]
+        }
+        Insert: {
+          changed_at?: string
+          contact_id: string
+          from_stage?: Database["public"]["Enums"]["sale_stage"] | null
+          id?: string
+          to_stage: Database["public"]["Enums"]["sale_stage"]
+        }
+        Update: {
+          changed_at?: string
+          contact_id?: string
+          from_stage?: Database["public"]["Enums"]["sale_stage"] | null
+          id?: string
+          to_stage?: Database["public"]["Enums"]["sale_stage"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +206,20 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      conversion_probability: "baixa" | "media" | "alta" | "muito_alta"
+      purchase_preference:
+        | "a_vista"
+        | "parcelado"
+        | "financiamento"
+        | "indefinido"
+      sale_stage:
+        | "novo_lead"
+        | "qualificacao"
+        | "proposta"
+        | "negociacao"
+        | "fechamento"
+        | "pos_venda"
+        | "perdido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +346,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      conversion_probability: ["baixa", "media", "alta", "muito_alta"],
+      purchase_preference: [
+        "a_vista",
+        "parcelado",
+        "financiamento",
+        "indefinido",
+      ],
+      sale_stage: [
+        "novo_lead",
+        "qualificacao",
+        "proposta",
+        "negociacao",
+        "fechamento",
+        "pos_venda",
+        "perdido",
+      ],
+    },
   },
 } as const
