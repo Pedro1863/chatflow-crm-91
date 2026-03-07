@@ -124,19 +124,19 @@ const DashboardPage = () => {
           description="Clientes que recompraram" />
         
         <MetricCard
-          title="Total Convertidos"
+          title="Clientes em risco"
           value={metrics.totalConverted}
-          icon={Target}
+          icon={TrendingDown}
           description="Clientes convertidos" />
         
         <MetricCard
-          title="Mensagens no Mês"
+          title="Taxa de Churn"
           value={metrics.monthMessages}
-          icon={BarChart3}
+          icon={TrendingDown}
           description="Total de mensagens" />
         
         <MetricCard
-          title="Total Clientes"
+          title="Clientes Inativados"
           value={metrics.totalContacts}
           icon={Users}
           description="Na base" />
