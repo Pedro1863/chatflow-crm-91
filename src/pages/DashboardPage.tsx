@@ -82,7 +82,7 @@ const DashboardPage = () => {
           description="WhatsApp → Venda" />
         
         <MetricCard
-          title="Produto Top"
+          title="Lead não convertido"
           value={metrics.topProduct}
           icon={ShoppingBag}
           description="Mais vendido" />
