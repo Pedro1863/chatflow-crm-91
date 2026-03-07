@@ -97,7 +97,7 @@ const DashboardPage = () => {
 
       {/* Pipeline Overview */}
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-
+        % ETAPAS QUE LEADS NÃO CONVERTIDOS PARARAM
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         {Object.entries(stageLabels).map(([key, label]) =>
