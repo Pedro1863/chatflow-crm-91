@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   TrendingUp,
+  TrendingDown,
   ShoppingBag,
   Clock,
   RefreshCw,
