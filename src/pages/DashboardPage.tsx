@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   TrendingUp,
+  TrendingDown,
   ShoppingBag,
   Clock,
   RefreshCw,
@@ -37,7 +38,7 @@ function MetricCard({
 }
 
 const stageLabels: Record<string, string> = {
-  novo_lead: "Novo Lead",
+  novo_lead: "prim. resp.",
   qualificacao: "Qualificação",
   proposta: "Proposta",
   negociacao: "Negociação",
@@ -81,7 +82,7 @@ const DashboardPage = () => {
           description="WhatsApp → Venda" />
         
         <MetricCard
-          title="Produto Top"
+          title="Lead não convertido"
           value={metrics.topProduct}
           icon={ShoppingBag}
           description="Mais vendido" />
@@ -96,7 +97,7 @@ const DashboardPage = () => {
 
       {/* Pipeline Overview */}
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-
+        % ETAPAS QUE LEADS NÃO CONVERTIDOS PARARAM
       </h2>
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
         {Object.entries(stageLabels).map(([key, label]) =>
@@ -123,19 +124,19 @@ const DashboardPage = () => {
           description="Clientes que recompraram" />
         
         <MetricCard
-          title="Total Convertidos"
+          title="Clientes em risco"
           value={metrics.totalConverted}
-          icon={Target}
+          icon={TrendingDown}
           description="Clientes convertidos" />
         
         <MetricCard
-          title="Mensagens no Mês"
+          title="Taxa de Churn"
           value={metrics.monthMessages}
-          icon={BarChart3}
+          icon={TrendingDown}
           description="Total de mensagens" />
         
         <MetricCard
-          title="Total Clientes"
+          title="Clientes Inativados"
           value={metrics.totalContacts}
           icon={Users}
           description="Na base" />
