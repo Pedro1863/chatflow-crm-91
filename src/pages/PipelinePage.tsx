@@ -1,36 +1,29 @@
-import { useContacts, useUpdateContact } from "@/hooks/use-crm-data";
+import { useContatos, useUpdateContato } from "@/hooks/use-crm-data";
 import { Badge } from "@/components/ui/badge";
 
-const stageLabels: Record<string, string> = {
+const statusLabels: Record<string, string> = {
   novo_lead: "Novo Lead",
-  qualificacao: "Qualificação",
-  proposta: "Proposta",
-  negociacao: "Negociação",
-  fechamento: "Fechamento",
-  pos_venda: "Pós-venda",
-  perdido: "Perdido",
+  contato_iniciado: "Contato Iniciado",
+  proposta_enviada: "Proposta Enviada",
+  cliente: "Cliente",
 };
 
-const stageColors: Record<string, string> = {
+const statusColors: Record<string, string> = {
   novo_lead: "bg-chart-2/20 text-chart-2",
-  qualificacao: "bg-chart-3/20 text-chart-3",
-  proposta: "bg-chart-4/20 text-chart-4",
-  negociacao: "bg-chart-1/20 text-chart-1",
-  fechamento: "bg-primary/20 text-primary",
-  pos_venda: "bg-primary/30 text-primary",
-  perdido: "bg-destructive/20 text-destructive",
+  contato_iniciado: "bg-chart-3/20 text-chart-3",
+  proposta_enviada: "bg-chart-4/20 text-chart-4",
+  cliente: "bg-primary/20 text-primary",
 };
 
-const stages = ["novo_lead", "qualificacao", "proposta", "negociacao", "fechamento", "pos_venda", "perdido"];
+const stages = ["novo_lead", "contato_iniciado", "proposta_enviada", "cliente"];
 
 const PipelinePage = () => {
-  const { data: contacts = [] } = useContacts();
-  const updateContact = useUpdateContact();
+  const { data: contatos = [] } = useContatos();
 
-  const contactsByStage = stages.reduce((acc, stage) => {
-    acc[stage] = contacts.filter((c) => (c.sale_stage || "novo_lead") === stage);
+  const contatosByStage = stages.reduce((acc, stage) => {
+    acc[stage] = contatos.filter((c) => c.status_funil === stage);
     return acc;
-  }, {} as Record<string, typeof contacts>);
+  }, {} as Record<string, typeof contatos>);
 
   return (
     <div className="h-full p-6 overflow-x-auto">
@@ -39,38 +32,38 @@ const PipelinePage = () => {
         {stages.map((stage) => (
           <div key={stage} className="w-64 shrink-0">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-sm text-foreground">{stageLabels[stage]}</h3>
+              <h3 className="font-semibold text-sm text-foreground">{statusLabels[stage]}</h3>
               <Badge variant="secondary" className="text-xs">
-                {contactsByStage[stage].length}
+                {contatosByStage[stage].length}
               </Badge>
             </div>
             <div className="space-y-2">
-              {contactsByStage[stage].map((contact) => (
+              {contatosByStage[stage].map((contato) => (
                 <div
-                  key={contact.id}
+                  key={contato.id}
                   className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center">
                       <span className="text-xs font-semibold text-primary">
-                        {(contact.name || contact.phone)[0].toUpperCase()}
+                        {(contato.nome || contato.telefone)[0].toUpperCase()}
                       </span>
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate text-foreground">
-                        {contact.name || contact.phone}
+                        {contato.nome || contato.telefone}
                       </p>
-                      <p className="text-xs text-muted-foreground">{contact.phone}</p>
+                      <p className="text-xs text-muted-foreground">{contato.telefone}</p>
                     </div>
                   </div>
-                  {contact.product_interest && (
-                    <Badge className={`text-xs ${stageColors[stage]}`}>
-                      {contact.product_interest}
+                  {contato.empresa && (
+                    <Badge className={`text-xs ${statusColors[stage]}`}>
+                      {contato.empresa}
                     </Badge>
                   )}
                 </div>
               ))}
-              {contactsByStage[stage].length === 0 && (
+              {contatosByStage[stage].length === 0 && (
                 <div className="text-center py-8 text-muted-foreground text-xs border border-dashed border-border rounded-lg">
                   Sem contatos
                 </div>

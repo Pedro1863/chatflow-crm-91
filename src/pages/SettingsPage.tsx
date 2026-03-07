@@ -17,13 +17,28 @@ const SettingsPage = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Configure o webhook do n8n para receber mensagens do WhatsApp Cloud API.
+              Configure o webhook do n8n para receber mensagens do WhatsApp.
             </p>
             <div className="bg-muted rounded-lg p-3">
               <p className="text-xs text-muted-foreground mb-1">URL do Webhook</p>
               <code className="text-sm text-foreground break-all">
                 {`{SUPABASE_URL}/functions/v1/whatsapp-webhook`}
               </code>
+            </div>
+            <div className="bg-muted rounded-lg p-3">
+              <p className="text-xs text-muted-foreground mb-1">Payload esperado</p>
+              <pre className="text-xs text-foreground whitespace-pre-wrap">
+{`{
+  "telefone": "+5511999999999",
+  "mensagem": "Olá, quero saber mais",
+  "direcao": "entrada",
+  "vendedor": "João",
+  "nome": "Maria Silva",
+  "empresa": "Empresa X",
+  "cidade": "São Paulo",
+  "origem": "whatsapp"
+}`}
+              </pre>
             </div>
             <Badge variant="secondary">POST</Badge>
           </CardContent>
@@ -42,10 +57,11 @@ const SettingsPage = () => {
             </p>
             <div className="space-y-2">
               {[
-                { method: "GET", path: "/functions/v1/crm-api?action=list_contacts", desc: "Listar clientes" },
-                { method: "GET", path: "/functions/v1/crm-api?action=get_contact&id={id}", desc: "Buscar cliente" },
-                { method: "POST", path: "/functions/v1/crm-api?action=update_stage", desc: "Atualizar etapa do funil" },
-                { method: "POST", path: "/functions/v1/crm-api?action=update_contact", desc: "Atualizar dados do cliente" },
+                { method: "GET", path: "/functions/v1/crm-api?action=list_contatos", desc: "Listar contatos" },
+                { method: "GET", path: "/functions/v1/crm-api?action=get_contato&id={id}", desc: "Buscar contato" },
+                { method: "GET", path: "/functions/v1/crm-api?action=get_mensagens&contato_id={id}", desc: "Buscar mensagens de um contato" },
+                { method: "POST", path: "/functions/v1/crm-api?action=update_status", desc: "Atualizar status do funil" },
+                { method: "POST", path: "/functions/v1/crm-api?action=create_contato", desc: "Criar contato" },
               ].map((ep) => (
                 <div key={ep.path} className="bg-muted rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-1">
@@ -68,8 +84,8 @@ const SettingsPage = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              As mensagens do WhatsApp são recebidas via webhook do n8n que processa os eventos
-              da WhatsApp Cloud API e envia para o endpoint do CRM.
+              As mensagens do WhatsApp são recebidas via webhook do n8n. O dashboard apenas lê e exibe os dados.
+              Os contatos são criados e atualizados pelo n8n.
             </p>
           </CardContent>
         </Card>

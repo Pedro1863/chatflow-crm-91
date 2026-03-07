@@ -1,4 +1,4 @@
-import { MessageSquare, BarChart3, Users, LayoutDashboard, Settings } from "lucide-react";
+import { MessageSquare, BarChart3, Users, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -14,8 +14,7 @@ import {
 const items = [
   { title: "Conversas", url: "/", icon: MessageSquare },
   { title: "Pipeline", url: "/pipeline", icon: BarChart3 },
-  { title: "Clientes", url: "/clients", icon: Users },
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Contatos", url: "/clients", icon: Users },
   { title: "Configurações", url: "/settings", icon: Settings },
 ];
 

@@ -1,184 +1,95 @@
-import { useDashboardMetrics } from "@/hooks/use-crm-data";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Users,
-  TrendingUp,
-  TrendingDown,
-  ShoppingBag,
-  Clock,
-  RefreshCw,
-  AlertTriangle,
-  BarChart3,
-  Target } from
-"lucide-react";
+import { useContatos } from "@/hooks/use-crm-data";
+import { Card, CardContent } from "@/components/ui/card";
+import { Users, UserCheck, Send, Clock } from "lucide-react";
 
-function MetricCard({
-  title,
-  value,
-  icon: Icon,
-  description
-
-
-
-
-
-}: {title: string;value: string | number;icon: React.ElementType;description?: string;}) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-primary" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">{value}</div>
-        {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
-      </CardContent>
-    </Card>);
-
-}
-
-const stageLabels: Record<string, string> = {
-  novo_lead: "prim. resp.",
-  qualificacao: "Qualificação",
-  proposta: "Proposta",
-  negociacao: "Negociação",
-  fechamento: "Fechamento",
-  pos_venda: "Pós-venda",
-  perdido: "Perdido"
+const statusLabels: Record<string, string> = {
+  novo_lead: "Novo Lead",
+  contato_iniciado: "Contato Iniciado",
+  proposta_enviada: "Proposta Enviada",
+  cliente: "Cliente",
 };
 
 const DashboardPage = () => {
-  const { data: metrics, isLoading } = useDashboardMetrics();
+  const { data: contatos = [], isLoading } = useContatos();
 
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
-        Carregando métricas...
-      </div>);
-
+        Carregando...
+      </div>
+    );
   }
 
-  if (!metrics) return null;
+  const totalContatos = contatos.length;
+  const clientes = contatos.filter(c => c.status_funil === "cliente").length;
+  const novosLeads = contatos.filter(c => c.status_funil === "novo_lead").length;
+  const propostas = contatos.filter(c => c.status_funil === "proposta_enviada").length;
+
+  const statusCounts: Record<string, number> = {};
+  contatos.forEach(c => {
+    statusCounts[c.status_funil] = (statusCounts[c.status_funil] || 0) + 1;
+  });
 
   return (
     <div className="h-full p-6 overflow-y-auto scrollbar-thin">
       <h1 className="text-xl font-bold text-foreground mb-6">Dashboard</h1>
 
-      {/* Performance Comercial */}
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-        Performance Comercial
-      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <MetricCard
-          title="Leads no Mês"
-          value={metrics.monthLeads}
-          icon={Users}
-          description="Novos contatos este mês" />
-        
-        <MetricCard
-          title="Taxa de Conversão"
-          value={`${metrics.conversionRate}%`}
-          icon={TrendingUp}
-          description="WhatsApp → Venda" />
-        
-        <MetricCard
-          title="Lead não convertido"
-          value={metrics.topProduct}
-          icon={ShoppingBag}
-          description="Mais vendido" />
-        
-        <MetricCard
-          title="Menor Venda"
-          value={metrics.bottomProduct}
-          icon={ShoppingBag}
-          description="Menos vendido" />
-        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Total Contatos</span>
+              <Users className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{totalContatos}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Clientes</span>
+              <UserCheck className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{clientes}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Novos Leads</span>
+              <Clock className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{novosLeads}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">Propostas Enviadas</span>
+              <Send className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-2xl font-bold text-foreground">{propostas}</div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Pipeline Overview */}
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-        % ETAPAS QUE LEADS NÃO CONVERTIDOS PARARAM
+        Funil por Status
       </h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
-        {Object.entries(stageLabels).map(([key, label]) =>
-        <Card key={key}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Object.entries(statusLabels).map(([key, label]) => (
+          <Card key={key}>
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-foreground">
-                {metrics.stageCounts[key] || 0}
+                {statusCounts[key] || 0}
               </div>
               <p className="text-xs text-muted-foreground mt-1">{label}</p>
             </CardContent>
           </Card>
-        )}
+        ))}
       </div>
-
-      {/* Relacionamento */}
-      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">RETENÇÃO CLIENTES
-
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <MetricCard
-          title="Taxa Recompra"
-          value={`${metrics.rebuyRate}%`}
-          icon={RefreshCw}
-          description="Clientes que recompraram" />
-        
-        <MetricCard
-          title="Clientes em risco"
-          value={metrics.totalConverted}
-          icon={TrendingDown}
-          description="Clientes convertidos" />
-        
-        <MetricCard
-          title="Taxa de Churn"
-          value={metrics.monthMessages}
-          icon={TrendingDown}
-          description="Total de mensagens" />
-        
-        <MetricCard
-          title="Clientes Inativados"
-          value={metrics.totalContacts}
-          icon={Users}
-          description="Na base" />
-        
-      </div>
-
-      {/* Products */}
-      {Object.keys(metrics.productCounts).length > 0 &&
-      <>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-            Produtos por Volume
-          </h2>
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                {Object.entries(metrics.productCounts).
-              sort((a, b) => (b[1] as number) - (a[1] as number)).
-              map(([product, count]) => {
-                const max = Math.max(...(Object.values(metrics.productCounts) as number[]));
-                const pct = (count as number) / max * 100;
-                return (
-                  <div key={product}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-foreground">{product}</span>
-                          <span className="text-muted-foreground">{count as number}</span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${pct}%` }} />
-                      
-                        </div>
-                      </div>);
-
-              })}
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      }
-    </div>);
-
+    </div>
+  );
 };
 
 export default DashboardPage;

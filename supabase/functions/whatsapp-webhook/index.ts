@@ -19,86 +19,61 @@ serve(async (req) => {
 
     const body = await req.json();
 
-    // Extract message data from n8n webhook payload
-    const phone = body.phone || body.from || body.wa_id;
-    const message = body.message || body.text || body.body || "";
-    const messageId = body.message_id || body.id;
-    const direction = body.direction || "inbound";
+    const telefone = body.telefone || body.phone || body.from || body.wa_id;
+    const mensagem = body.mensagem || body.message || body.text || body.body || "";
+    const direcao = body.direcao || body.direction || "entrada";
+    const vendedor = body.vendedor || body.seller || null;
 
-    if (!phone) {
-      return new Response(JSON.stringify({ error: "phone is required" }), {
+    if (!telefone) {
+      return new Response(JSON.stringify({ error: "telefone is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Upsert contact
-    let { data: contact } = await supabase
-      .from("contacts")
+    // Localizar contato pelo telefone
+    let { data: contato } = await supabase
+      .from("contatos")
       .select("*")
-      .eq("phone", phone)
+      .eq("telefone", telefone)
       .single();
 
-    if (!contact) {
-      const { data: newContact, error: contactErr } = await supabase
-        .from("contacts")
-        .insert({ phone, name: body.name || null })
-        .select()
-        .single();
-      if (contactErr) throw contactErr;
-      contact = newContact;
-    }
-
-    // Update last_message_at
-    await supabase
-      .from("contacts")
-      .update({ last_message_at: new Date().toISOString() })
-      .eq("id", contact.id);
-
-    // Get or create conversation
-    let { data: conversation } = await supabase
-      .from("conversations")
-      .select("*")
-      .eq("contact_id", contact.id)
-      .eq("is_active", true)
-      .single();
-
-    if (!conversation) {
-      const { data: newConv, error: convErr } = await supabase
-        .from("conversations")
+    // Se não existe, o n8n deve criar antes. Mas como fallback, criamos com dados mínimos
+    if (!contato) {
+      const { data: novo, error: errContato } = await supabase
+        .from("contatos")
         .insert({
-          contact_id: contact.id,
-          whatsapp_chat_id: body.chat_id || null,
-          last_message_preview: message,
+          telefone,
+          nome: body.nome || body.name || null,
+          empresa: body.empresa || null,
+          cidade: body.cidade || null,
+          origem: body.origem || "whatsapp",
         })
         .select()
         .single();
-      if (convErr) throw convErr;
-      conversation = newConv;
-    } else {
-      await supabase
-        .from("conversations")
-        .update({
-          last_message_preview: message,
-          unread_count: (conversation.unread_count || 0) + (direction === "inbound" ? 1 : 0),
-        })
-        .eq("id", conversation.id);
+      if (errContato) throw errContato;
+      contato = novo;
     }
 
-    // Insert message
-    const { error: msgErr } = await supabase.from("messages").insert({
-      conversation_id: conversation.id,
-      contact_id: contact.id,
-      content: message,
-      direction,
-      whatsapp_message_id: messageId || null,
-      message_type: body.type || "text",
+    // Atualizar ultima_interacao do contato
+    await supabase
+      .from("contatos")
+      .update({ ultima_interacao: new Date().toISOString() })
+      .eq("id", contato.id);
+
+    // Salvar mensagem
+    const { error: msgErr } = await supabase.from("mensagens").insert({
+      contato_id: contato.id,
+      telefone,
+      mensagem,
+      direcao,
+      vendedor,
     });
 
     if (msgErr) throw msgErr;
 
     return new Response(
-      JSON.stringify({ success: true, contact_id: contact.id, conversation_id: conversation.id }),
+      JSON.stringify({ success: true, contato_id: contato.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
