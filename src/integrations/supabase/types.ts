@@ -74,6 +74,42 @@ export type Database = {
         }
         Relationships: []
       }
+      contatos: {
+        Row: {
+          cidade: string | null
+          data_criacao: string
+          empresa: string | null
+          id: string
+          nome: string | null
+          origem: string | null
+          status_funil: string
+          telefone: string
+          ultima_interacao: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          data_criacao?: string
+          empresa?: string | null
+          id?: string
+          nome?: string | null
+          origem?: string | null
+          status_funil?: string
+          telefone: string
+          ultima_interacao?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          data_criacao?: string
+          empresa?: string | null
+          id?: string
+          nome?: string | null
+          origem?: string | null
+          status_funil?: string
+          telefone?: string
+          ultima_interacao?: string | null
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           contact_id: string
@@ -111,6 +147,44 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensagens: {
+        Row: {
+          contato_id: string
+          direcao: string
+          id: string
+          mensagem: string
+          telefone: string | null
+          timestamp: string
+          vendedor: string | null
+        }
+        Insert: {
+          contato_id: string
+          direcao?: string
+          id?: string
+          mensagem: string
+          telefone?: string | null
+          timestamp?: string
+          vendedor?: string | null
+        }
+        Update: {
+          contato_id?: string
+          direcao?: string
+          id?: string
+          mensagem?: string
+          telefone?: string | null
+          timestamp?: string
+          vendedor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_contato_id_fkey"
+            columns: ["contato_id"]
+            isOneToOne: false
+            referencedRelation: "contatos"
             referencedColumns: ["id"]
           },
         ]
