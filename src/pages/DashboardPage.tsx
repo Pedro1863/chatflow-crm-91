@@ -38,7 +38,7 @@ function MetricCard({
 }
 
 const stageLabels: Record<string, string> = {
-  novo_lead: "Novo Lead",
+  novo_lead: "prim. resp.",
   qualificacao: "Qualificação",
   proposta: "Proposta",
   negociacao: "Negociação",
