@@ -22,10 +22,10 @@ serve(async (req) => {
 
     // GET actions
     if (req.method === "GET") {
-      if (action === "list_contacts") {
-        const stage = url.searchParams.get("stage");
-        let query = supabase.from("contacts").select("*").order("updated_at", { ascending: false });
-        if (stage) query = query.eq("sale_stage", stage);
+      if (action === "list_contatos") {
+        const status = url.searchParams.get("status_funil");
+        let query = supabase.from("contatos").select("*").order("ultima_interacao", { ascending: false, nullsFirst: false });
+        if (status) query = query.eq("status_funil", status);
         const { data, error } = await query;
         if (error) throw error;
         return new Response(JSON.stringify(data), {
@@ -33,10 +33,24 @@ serve(async (req) => {
         });
       }
 
-      if (action === "get_contact") {
+      if (action === "get_contato") {
         const id = url.searchParams.get("id");
         if (!id) throw new Error("id is required");
-        const { data, error } = await supabase.from("contacts").select("*").eq("id", id).single();
+        const { data, error } = await supabase.from("contatos").select("*").eq("id", id).single();
+        if (error) throw error;
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (action === "get_mensagens") {
+        const contato_id = url.searchParams.get("contato_id");
+        if (!contato_id) throw new Error("contato_id is required");
+        const { data, error } = await supabase
+          .from("mensagens")
+          .select("*")
+          .eq("contato_id", contato_id)
+          .order("timestamp", { ascending: true });
         if (error) throw error;
         return new Response(JSON.stringify(data), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -48,48 +62,25 @@ serve(async (req) => {
     if (req.method === "POST") {
       const body = await req.json();
 
-      if (action === "update_stage") {
-        const { contact_id, stage } = body;
-        if (!contact_id || !stage) throw new Error("contact_id and stage are required");
-
-        // Get current stage for event tracking
-        const { data: current } = await supabase
-          .from("contacts")
-          .select("sale_stage")
-          .eq("id", contact_id)
-          .single();
-
-        // Update stage
+      if (action === "update_status") {
+        const { contato_id, status_funil } = body;
+        if (!contato_id || !status_funil) throw new Error("contato_id and status_funil are required");
         const { data, error } = await supabase
-          .from("contacts")
-          .update({
-            sale_stage: stage,
-            ...(stage === "fechamento" ? { converted_at: new Date().toISOString() } : {}),
-          })
-          .eq("id", contact_id)
+          .from("contatos")
+          .update({ status_funil })
+          .eq("id", contato_id)
           .select()
           .single();
         if (error) throw error;
-
-        // Log event
-        await supabase.from("sales_events").insert({
-          contact_id,
-          from_stage: current?.sale_stage || null,
-          to_stage: stage,
-        });
-
         return new Response(JSON.stringify(data), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      if (action === "update_contact") {
-        const { contact_id, ...updates } = body;
-        if (!contact_id) throw new Error("contact_id is required");
+      if (action === "create_contato") {
         const { data, error } = await supabase
-          .from("contacts")
-          .update(updates)
-          .eq("id", contact_id)
+          .from("contatos")
+          .insert(body)
           .select()
           .single();
         if (error) throw error;
