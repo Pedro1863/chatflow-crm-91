@@ -1,4 +1,4 @@
-import { MessageSquare, BarChart3, Users, Settings } from "lucide-react";
+import { MessageSquare, BarChart3, Users, Settings, TrendingUp } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
