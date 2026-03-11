@@ -119,18 +119,68 @@ export function useMensagens(contatoId: string | null) {
   });
 }
 
+// ── Webhook URL helper ──
+
+const N8N_WEBHOOK_KEY = "n8n_webhook_url";
+
+export function getN8nWebhookUrl(): string {
+  return localStorage.getItem(N8N_WEBHOOK_KEY) || "";
+}
+
+export function setN8nWebhookUrl(url: string) {
+  localStorage.setItem(N8N_WEBHOOK_KEY, url);
+}
+
 export function useSendMensagem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (msg: { contato_id: string; telefone: string; mensagem: string; vendedor?: string }) => {
-      // Call edge function to send via WhatsApp and save to DB
-      const { data, error } = await supabase.functions.invoke("send-whatsapp", {
-        body: msg,
+      const webhookUrl = getN8nWebhookUrl();
+      if (!webhookUrl) {
+        throw new Error("URL do webhook n8n não configurada. Vá em Configurações para definir.");
+      }
+
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telefone: msg.telefone,
+          mensagem: msg.mensagem,
+        }),
       });
-      if (error) throw error;
-      return data;
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Erro no webhook: ${errorText}`);
+      }
+
+      return res.json().catch(() => ({ success: true }));
     },
-    onSuccess: (_, vars) => {
+    onMutate: async (vars) => {
+      // Optimistic update
+      await qc.cancelQueries({ queryKey: ["mensagens", vars.contato_id] });
+      const previous = qc.getQueryData<Mensagem[]>(["mensagens", vars.contato_id]);
+
+      const optimistic: Mensagem = {
+        id: `temp-${Date.now()}`,
+        contato_id: vars.contato_id,
+        telefone: vars.telefone,
+        mensagem: vars.mensagem,
+        direcao: "saida",
+        vendedor: vars.vendedor || null,
+        timestamp: new Date().toISOString(),
+      };
+
+      qc.setQueryData<Mensagem[]>(["mensagens", vars.contato_id], (old = []) => [...old, optimistic]);
+
+      return { previous };
+    },
+    onError: (_err, vars, context) => {
+      if (context?.previous) {
+        qc.setQueryData(["mensagens", vars.contato_id], context.previous);
+      }
+    },
+    onSettled: (_, __, vars) => {
       qc.invalidateQueries({ queryKey: ["mensagens", vars.contato_id] });
       qc.invalidateQueries({ queryKey: ["contatos"] });
     },
