@@ -8,6 +8,7 @@ import ConversationsPage from "./pages/ConversationsPage";
 import PipelinePage from "./pages/PipelinePage";
 import ClientsPage from "./pages/ClientsPage";
 import SettingsPage from "./pages/SettingsPage";
+import SalesDashboardPage from "./pages/SalesDashboardPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
