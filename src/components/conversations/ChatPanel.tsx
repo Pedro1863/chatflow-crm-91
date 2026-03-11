@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Send, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Props {
   contatoId: string | null;
@@ -33,11 +34,18 @@ export function ChatPanel({ contatoId }: Props) {
 
   const handleSend = () => {
     if (!text.trim() || !contato) return;
-    sendMensagem.mutate({
-      contato_id: contatoId,
-      telefone: contato.telefone,
-      mensagem: text.trim(),
-    });
+    sendMensagem.mutate(
+      {
+        contato_id: contatoId!,
+        telefone: contato.telefone,
+        mensagem: text.trim(),
+      },
+      {
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Erro ao enviar mensagem");
+        },
+      }
+    );
     setText("");
   };
 
