@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 export type Contato = {
   id: string;
@@ -23,9 +24,31 @@ export type Mensagem = {
   timestamp: string;
 };
 
+// ── Realtime helper ──
+
+function useRealtimeInvalidation(table: string, queryKey: string[]) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel(`realtime-${table}-${queryKey.join("-")}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table },
+        () => {
+          qc.invalidateQueries({ queryKey });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [table, queryKey.join("-"), qc]);
+}
+
 // ── Contatos ──
 
 export function useContatos() {
+  useRealtimeInvalidation("contatos", ["contatos"]);
   return useQuery({
     queryKey: ["contatos"],
     queryFn: async () => {
@@ -79,6 +102,7 @@ export function useUpdateContato() {
 // ── Mensagens ──
 
 export function useMensagens(contatoId: string | null) {
+  useRealtimeInvalidation("mensagens", ["mensagens", contatoId || ""]);
   return useQuery({
     queryKey: ["mensagens", contatoId],
     queryFn: async () => {
@@ -92,7 +116,6 @@ export function useMensagens(contatoId: string | null) {
       return data as Mensagem[];
     },
     enabled: !!contatoId,
-    refetchInterval: 5000,
   });
 }
 
@@ -100,17 +123,11 @@ export function useSendMensagem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (msg: { contato_id: string; telefone: string; mensagem: string; vendedor?: string }) => {
-      const { data, error } = await supabase
-        .from("mensagens")
-        .insert({ ...msg, direcao: "saida" })
-        .select()
-        .single();
+      // Call edge function to send via WhatsApp and save to DB
+      const { data, error } = await supabase.functions.invoke("send-whatsapp", {
+        body: msg,
+      });
       if (error) throw error;
-      // Atualizar ultima_interacao
-      await supabase
-        .from("contatos")
-        .update({ ultima_interacao: new Date().toISOString() })
-        .eq("id", msg.contato_id);
       return data;
     },
     onSuccess: (_, vars) => {
