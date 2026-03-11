@@ -34,11 +34,18 @@ export function ChatPanel({ contatoId }: Props) {
 
   const handleSend = () => {
     if (!text.trim() || !contato) return;
-    sendMensagem.mutate({
-      contato_id: contatoId,
-      telefone: contato.telefone,
-      mensagem: text.trim(),
-    });
+    sendMensagem.mutate(
+      {
+        contato_id: contatoId!,
+        telefone: contato.telefone,
+        mensagem: text.trim(),
+      },
+      {
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : "Erro ao enviar mensagem");
+        },
+      }
+    );
     setText("");
   };
 
