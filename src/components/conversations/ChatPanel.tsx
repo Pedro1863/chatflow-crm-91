@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Send, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Props {
   contatoId: string | null;
