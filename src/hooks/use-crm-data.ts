@@ -140,6 +140,23 @@ export function useSendMensagem() {
         throw new Error("URL do webhook n8n não configurada. Vá em Configurações para definir.");
       }
 
+      // 1. Save outgoing message to Supabase
+      const { error: dbError } = await supabase.from("mensagens").insert({
+        contato_id: msg.contato_id,
+        telefone: msg.telefone,
+        mensagem: msg.mensagem,
+        direcao: "saida",
+        vendedor: msg.vendedor || null,
+      });
+      if (dbError) throw dbError;
+
+      // 2. Update ultima_interacao
+      await supabase
+        .from("contatos")
+        .update({ ultima_interacao: new Date().toISOString() })
+        .eq("id", msg.contato_id);
+
+      // 3. Send to n8n webhook
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,13 +168,12 @@ export function useSendMensagem() {
 
       if (!res.ok) {
         const errorText = await res.text();
-        throw new Error(`Erro no webhook: ${errorText}`);
+        console.error("Webhook error (message already saved):", errorText);
       }
 
-      return res.json().catch(() => ({ success: true }));
+      return { success: true };
     },
     onMutate: async (vars) => {
-      // Optimistic update
       await qc.cancelQueries({ queryKey: ["mensagens", vars.contato_id] });
       const previous = qc.getQueryData<Mensagem[]>(["mensagens", vars.contato_id]);
 
