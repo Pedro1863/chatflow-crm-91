@@ -151,6 +151,78 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          data_conversao: string | null
+          data_primeiro_contato: string | null
+          data_ultimo_pedido: string | null
+          id: string
+          nome: string | null
+          origem_lead: string | null
+          status_cliente: string | null
+          telefone: string
+          total_pedidos: number | null
+          valor_total_comprado: number | null
+        }
+        Insert: {
+          data_conversao?: string | null
+          data_primeiro_contato?: string | null
+          data_ultimo_pedido?: string | null
+          id?: string
+          nome?: string | null
+          origem_lead?: string | null
+          status_cliente?: string | null
+          telefone: string
+          total_pedidos?: number | null
+          valor_total_comprado?: number | null
+        }
+        Update: {
+          data_conversao?: string | null
+          data_primeiro_contato?: string | null
+          data_ultimo_pedido?: string | null
+          id?: string
+          nome?: string | null
+          origem_lead?: string | null
+          status_cliente?: string | null
+          telefone?: string
+          total_pedidos?: number | null
+          valor_total_comprado?: number | null
+        }
+        Relationships: []
+      }
+      leads_pipeline: {
+        Row: {
+          data_entrada: string | null
+          data_ultima_interacao: string | null
+          etapa_pipeline: string | null
+          id: string
+          motivo_perda: string | null
+          nome: string | null
+          status: string | null
+          telefone: string
+        }
+        Insert: {
+          data_entrada?: string | null
+          data_ultima_interacao?: string | null
+          etapa_pipeline?: string | null
+          id?: string
+          motivo_perda?: string | null
+          nome?: string | null
+          status?: string | null
+          telefone: string
+        }
+        Update: {
+          data_entrada?: string | null
+          data_ultima_interacao?: string | null
+          etapa_pipeline?: string | null
+          id?: string
+          motivo_perda?: string | null
+          nome?: string | null
+          status?: string | null
+          telefone?: string
+        }
+        Relationships: []
+      }
       mensagens: {
         Row: {
           contato_id: string
