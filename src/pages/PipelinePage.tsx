@@ -1,5 +1,9 @@
 import { useContatos, useUpdateContato } from "@/hooks/use-crm-data";
+import { useIsCustomer, useRegisterLeadAttempt } from "@/hooks/use-leads-actions";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const statusLabels: Record<string, string> = {
   novo_lead: "Novo Lead",
@@ -15,15 +19,59 @@ const statusColors: Record<string, string> = {
   cliente: "bg-primary/20 text-primary",
 };
 
+// Map pipeline stages to lead attempt etapas
+const stageToEtapa: Record<string, string> = {
+  contato_iniciado: "primeiro_contato_sem_resposta",
+  proposta_enviada: "proposta_sem_resposta",
+};
+
 const stages = ["novo_lead", "contato_iniciado", "proposta_enviada", "cliente"];
 
 const PipelinePage = () => {
   const { data: contatos = [] } = useContatos();
+  const updateContato = useUpdateContato();
+  const registerAttempt = useRegisterLeadAttempt();
+  const qc = useQueryClient();
 
   const contatosByStage = stages.reduce((acc, stage) => {
     acc[stage] = contatos.filter((c) => c.status_funil === stage);
     return acc;
   }, {} as Record<string, typeof contatos>);
+
+  const handleMoveToStage = async (contato: typeof contatos[0], newStage: string) => {
+    const oldStage = contato.status_funil;
+    if (oldStage === newStage) return;
+
+    // If moving backwards or to a non-final stage, register a lead attempt
+    // (e.g., moving from proposta_enviada back means that attempt failed)
+    if (oldStage !== "novo_lead" && newStage !== "cliente" && stageToEtapa[oldStage]) {
+      // Check if this phone is already a customer
+      const { data: customers } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("telefone", contato.telefone)
+        .limit(1);
+
+      const isCustomer = (customers?.length ?? 0) > 0;
+
+      if (!isCustomer) {
+        registerAttempt.mutate({
+          telefone: contato.telefone,
+          nome: contato.nome,
+          etapa_pipeline: stageToEtapa[oldStage],
+          origem: contato.origem,
+        });
+      }
+    }
+
+    // Update the contato status
+    updateContato.mutate(
+      { id: contato.id, status_funil: newStage },
+      {
+        onSuccess: () => toast.success(`Movido para ${statusLabels[newStage]}`),
+      }
+    );
+  };
 
   return (
     <div className="h-full p-6 overflow-x-auto">
@@ -61,6 +109,20 @@ const PipelinePage = () => {
                       {contato.empresa}
                     </Badge>
                   )}
+                  {/* Stage transition buttons */}
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {stages
+                      .filter((s) => s !== stage)
+                      .map((targetStage) => (
+                        <button
+                          key={targetStage}
+                          onClick={() => handleMoveToStage(contato, targetStage)}
+                          className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                        >
+                          → {statusLabels[targetStage]}
+                        </button>
+                      ))}
+                  </div>
                 </div>
               ))}
               {contatosByStage[stage].length === 0 && (

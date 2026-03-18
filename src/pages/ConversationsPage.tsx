@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ConversationList } from "@/components/conversations/ConversationList";
 import { ChatPanel } from "@/components/conversations/ChatPanel";
 import { ClientDetailPanel } from "@/components/conversations/ClientDetailPanel";
+import { InactivityPopup } from "@/components/conversations/InactivityPopup";
 
 const ConversationsPage = () => {
   const [selectedContatoId, setSelectedContatoId] = useState<string | null>(null);
@@ -16,6 +17,7 @@ const ConversationsPage = () => {
       {selectedContatoId && (
         <ClientDetailPanel contatoId={selectedContatoId} />
       )}
+      <InactivityPopup contatoId={selectedContatoId} />
     </div>
   );
 };

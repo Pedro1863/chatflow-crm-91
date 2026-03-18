@@ -24,6 +24,8 @@ export type LeadPipeline = {
   motivo_perda: string | null;
   data_ultima_interacao: string | null;
   status: string | null;
+  convertido: boolean;
+  data_interacao: string | null;
 };
 
 function useRealtimeInvalidation(table: string, queryKey: string[]) {

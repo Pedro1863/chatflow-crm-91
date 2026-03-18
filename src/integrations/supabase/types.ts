@@ -192,7 +192,9 @@ export type Database = {
       }
       leads_pipeline: {
         Row: {
+          convertido: boolean
           data_entrada: string | null
+          data_interacao: string | null
           data_ultima_interacao: string | null
           etapa_pipeline: string | null
           id: string
@@ -202,7 +204,9 @@ export type Database = {
           telefone: string
         }
         Insert: {
+          convertido?: boolean
           data_entrada?: string | null
+          data_interacao?: string | null
           data_ultima_interacao?: string | null
           etapa_pipeline?: string | null
           id?: string
@@ -212,7 +216,9 @@ export type Database = {
           telefone: string
         }
         Update: {
+          convertido?: boolean
           data_entrada?: string | null
+          data_interacao?: string | null
           data_ultima_interacao?: string | null
           etapa_pipeline?: string | null
           id?: string
