@@ -349,6 +349,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      churn_mensal: {
+        Args: { meses_atras?: number }
+        Returns: {
+          mes: string
+          taxa_churn_percentual: number
+          total_clientes_ativos_inicio: number
+          total_clientes_churnados_no_mes: number
+        }[]
+      }
       registrar_pedido: {
         Args: { _telefone: string; _valor_pedido?: number }
         Returns: {

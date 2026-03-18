@@ -70,3 +70,24 @@ export function useLeadsPipeline() {
     },
   });
 }
+
+export type ChurnMensal = {
+  mes: string;
+  total_clientes_ativos_inicio: number;
+  total_clientes_churnados_no_mes: number;
+  taxa_churn_percentual: number;
+};
+
+export function useChurnMensal(mesesAtras = 6) {
+  return useQuery({
+    queryKey: ["churn_mensal", mesesAtras],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("churn_mensal", {
+        meses_atras: mesesAtras,
+      });
+      if (error) throw error;
+      // Results come newest first, reverse for chart chronological order
+      return (data as ChurnMensal[]).reverse();
+    },
+  });
+}
