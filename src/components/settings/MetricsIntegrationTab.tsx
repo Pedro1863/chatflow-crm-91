@@ -96,36 +96,39 @@ Body:
               </AccordionContent>
             </AccordionItem>
 
-            {/* Passo 2 - Atualizar pedido de cliente existente */}
+            {/* Passo 2 - Registrar recompra (automático) */}
             <AccordionItem value="m2">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-blue-600 text-white">2</Badge>
-                  Atualizar pedido de cliente existente
+                  Registrar recompra (função automática)
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-3 text-sm text-muted-foreground">
-                <p>Quando um cliente fizer um novo pedido, atualize os campos de recompra:</p>
+                <p>Quando um cliente existente fizer um novo pedido, use a função <strong>registrar_pedido</strong>. Ela incrementa automaticamente o <code className="text-foreground">total_pedidos</code>, soma o valor ao <code className="text-foreground">valor_total_comprado</code> e atualiza a <code className="text-foreground">data_ultimo_pedido</code>.</p>
                 <div className="bg-muted rounded-lg p-3">
                   <p className="text-xs mb-1 font-medium">Configuração do HTTP Request:</p>
                   <pre className="text-xs text-foreground whitespace-pre-wrap">
-{`URL: ${SUPABASE_URL}/rest/v1/customers?telefone=eq.+5511999999999
-Method: PATCH
+{`URL: ${SUPABASE_URL}/rest/v1/rpc/registrar_pedido
+Method: POST
 Headers:
   apikey: ${SUPABASE_ANON_KEY}
   Content-Type: application/json
   Prefer: return=representation
 Body:
 {
-  "total_pedidos": 3,
-  "valor_total_comprado": 4500.00,
-  "data_ultimo_pedido": "2025-03-10T09:00:00Z"
+  "_telefone": "+5511999999999",
+  "_valor_pedido": 500.00
 }`}
                   </pre>
                 </div>
-                <div className="flex items-start gap-2 mt-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-yellow-500" />
-                  <p className="text-xs">Use o filtro <code className="text-foreground">?telefone=eq.+55...</code> para localizar o cliente pelo telefone.</p>
+                <div className="bg-muted rounded-lg p-3 mt-2">
+                  <p className="text-xs font-medium text-foreground">✅ Campos atualizados automaticamente:</p>
+                  <ul className="text-xs mt-1 space-y-1 list-disc list-inside">
+                    <li><code className="text-foreground">total_pedidos</code> → incrementa +1</li>
+                    <li><code className="text-foreground">valor_total_comprado</code> → soma o valor do pedido</li>
+                    <li><code className="text-foreground">data_ultimo_pedido</code> → atualiza para agora</li>
+                  </ul>
                 </div>
               </AccordionContent>
             </AccordionItem>
