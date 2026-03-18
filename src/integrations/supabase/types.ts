@@ -358,6 +358,15 @@ export type Database = {
           total_clientes_churnados_no_mes: number
         }[]
       }
+      metricas_aquisicao_mensal: {
+        Args: { meses_atras?: number }
+        Returns: {
+          mes: string
+          novos_clientes: number
+          receita_novos: number
+          receita_recorrentes: number
+        }[]
+      }
       registrar_pedido: {
         Args: { _telefone: string; _valor_pedido?: number }
         Returns: {
