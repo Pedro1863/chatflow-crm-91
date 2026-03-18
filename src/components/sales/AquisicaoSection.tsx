@@ -11,6 +11,7 @@ import { UserPlus, TrendingUp, Percent, Loader2 } from "lucide-react";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const aquisicaoConfig: ChartConfig = {
   novos_clientes: { label: "Novos Clientes", color: "hsl(var(--chart-2))" },
@@ -19,7 +20,7 @@ const aquisicaoConfig: ChartConfig = {
 const AquisicaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const { data: leads = [] } = useLeadsPipeline();
-  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(6);
+  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
 
   const totalLeads = leads.length + customers.length;
   const totalCustomers = customers.length;

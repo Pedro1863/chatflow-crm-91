@@ -11,6 +11,7 @@ import { DollarSign, Receipt, Loader2 } from "lucide-react";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const receitaConfig: ChartConfig = {
   receita_novos: { label: "Novos", color: "hsl(var(--chart-2))" },
@@ -19,7 +20,7 @@ const receitaConfig: ChartConfig = {
 
 const ReceitaSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
-  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(6);
+  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
 
   if (loadingC || loadingM) {
     return (

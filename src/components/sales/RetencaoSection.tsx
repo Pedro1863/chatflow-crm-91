@@ -20,6 +20,7 @@ import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import AlertBadge from "./AlertBadge";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const healthColors = {
   saudavel: "hsl(var(--chart-1))",
@@ -47,7 +48,7 @@ function classifyHealth(dataUltimoPedido: string | null): "saudavel" | "em_risco
 
 const RetencaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
-  const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(6);
+  const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
 
   if (loadingC || loadingChurn) {
     return (
