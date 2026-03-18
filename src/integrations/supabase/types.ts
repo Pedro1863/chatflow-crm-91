@@ -349,7 +349,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      registrar_pedido: {
+        Args: { _telefone: string; _valor_pedido?: number }
+        Returns: {
+          data_conversao: string | null
+          data_primeiro_contato: string | null
+          data_ultimo_pedido: string | null
+          id: string
+          nome: string | null
+          origem_lead: string | null
+          status_cliente: string | null
+          telefone: string
+          total_pedidos: number | null
+          valor_total_comprado: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "customers"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       conversion_probability: "baixa" | "media" | "alta" | "muito_alta"
