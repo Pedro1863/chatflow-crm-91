@@ -86,8 +86,27 @@ export function useChurnMensal(mesesAtras = 6) {
         meses_atras: mesesAtras,
       });
       if (error) throw error;
-      // Results come newest first, reverse for chart chronological order
       return (data as ChurnMensal[]).reverse();
+    },
+  });
+}
+
+export type AquisicaoMensal = {
+  mes: string;
+  novos_clientes: number;
+  receita_novos: number;
+  receita_recorrentes: number;
+};
+
+export function useAquisicaoMensal(mesesAtras = 6) {
+  return useQuery({
+    queryKey: ["aquisicao_mensal", mesesAtras],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("metricas_aquisicao_mensal", {
+        meses_atras: mesesAtras,
+      });
+      if (error) throw error;
+      return (data as AquisicaoMensal[]).reverse();
     },
   });
 }
