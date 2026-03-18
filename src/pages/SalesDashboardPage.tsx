@@ -194,7 +194,10 @@ const SalesDashboardPage = () => {
         </CardContent>
       </Card>
 
-      {/* ── Seção 3: Pipeline de perdas ── */}
+      {/* ── Seção 3: Taxa de Churn Mensal ── */}
+      <ChurnMensalChart />
+
+      {/* ── Seção 4: Pipeline de perdas ── */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
