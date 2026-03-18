@@ -20,6 +20,7 @@ import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import AlertBadge from "./AlertBadge";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const healthColors = {
   saudavel: "hsl(var(--chart-1))",
