@@ -5,6 +5,7 @@ import { differenceInDays } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import AlertBadge from "./AlertBadge";
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const ComportamentoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
