@@ -20,7 +20,7 @@ const receitaConfig: ChartConfig = {
 
 const ReceitaSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
-  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(6);
+  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
 
   if (loadingC || loadingM) {
     return (

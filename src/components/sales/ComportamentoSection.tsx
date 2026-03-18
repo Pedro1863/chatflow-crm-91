@@ -9,8 +9,9 @@ import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const ComportamentoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
-  const { data: churnData = [] } = useChurnMensal(6);
-  const { data: aquisicaoData = [] } = useAquisicaoMensal(6);
+  const meses = mesesDesdeMarco2026();
+  const { data: churnData = [] } = useChurnMensal(meses);
+  const { data: aquisicaoData = [] } = useAquisicaoMensal(meses);
 
   if (loadingC) {
     return (
