@@ -11,6 +11,7 @@ import { UserPlus, TrendingUp, Percent, Loader2 } from "lucide-react";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const aquisicaoConfig: ChartConfig = {
   novos_clientes: { label: "Novos Clientes", color: "hsl(var(--chart-2))" },
