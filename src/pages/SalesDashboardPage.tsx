@@ -1,4 +1,5 @@
 import { useCustomers, useLeadsPipeline } from "@/hooks/use-sales-data";
+import ChurnMensalChart from "@/components/sales/ChurnMensalChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
