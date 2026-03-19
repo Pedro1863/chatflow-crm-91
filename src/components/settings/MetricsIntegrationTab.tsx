@@ -83,12 +83,13 @@ Body:
 {
   "nome": "Maria Silva",
   "telefone": "+5511999999999",
+  "bling_id": "12345678",
   "data_primeiro_contato": "2025-01-15T10:00:00Z",
   "data_conversao": "2025-02-01T14:30:00Z",
   "total_pedidos": 1,
   "valor_total_comprado": 1500.00,
   "data_ultimo_pedido": "2025-02-01T14:30:00Z",
-  "origem_lead": "whatsapp",
+  "origem_lead": "bling",
   "status_cliente": "ativo"
 }`}
                   </pre>
