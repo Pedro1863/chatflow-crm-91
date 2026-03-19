@@ -166,11 +166,18 @@ const metricas = [
         descricao: "Conta apenas clientes que realizaram exatamente 1 pedido.",
       },
       {
-        nome: "Taxa de Conversão",
+        nome: "Taxa de Conversão (Clientes)",
         formula: "clientes_com_pedido / (leads_pipeline.count + clientes_com_pedido) × 100",
         tabelas: ["customers", "leads_pipeline"],
         campos: ["total_pedidos (≥1)"],
-        descricao: "Percentual de leads que viraram clientes com pelo menos 1 pedido. Clientes com total_pedidos = 0 são ignorados.",
+        descricao: "Percentual de leads que viraram clientes com pelo menos 1 pedido. Clientes com total_pedidos = 0 são ignorados. Conta clientes únicos.",
+      },
+      {
+        nome: "Taxa de Conversão (Vendas)",
+        formula: "SUM(total_pedidos) / (leads_pipeline.count + SUM(total_pedidos)) × 100",
+        tabelas: ["customers", "leads_pipeline"],
+        campos: ["total_pedidos", "leads_pipeline.count (tentativas)"],
+        descricao: "Percentual de vendas realizadas sobre o total de tentativas. Soma todas as vendas (total_pedidos) de todos os clientes e todas as tentativas registradas no pipeline.",
       },
       {
         nome: "% Novos na Base",

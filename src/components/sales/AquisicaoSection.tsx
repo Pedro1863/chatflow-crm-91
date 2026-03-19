@@ -7,7 +7,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
-import { UserPlus, TrendingUp, Percent, Loader2 } from "lucide-react";
+import { UserPlus, TrendingUp, Percent, Loader2, Target } from "lucide-react";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
@@ -26,6 +26,11 @@ const AquisicaoSection = () => {
   const totalLeads = leads.length + clientesComPedido.length;
   const totalCustomers = clientesComPedido.length;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
+
+  // Taxa de conversão por tentativas de venda
+  const totalVendas = customers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
+  const totalTentativas = leads.length + totalVendas;
+  const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
   const novosClientes = customers.filter((c) => c.total_pedidos === 1).length;
 
   // Trend: compare last two months of new clients
@@ -48,7 +53,7 @@ const AquisicaoSection = () => {
     <div className="space-y-4">
       <SectionHeader icon={UserPlus} title="Aquisição" />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           icon={UserPlus}
           label="Novos Clientes"
@@ -61,6 +66,12 @@ const AquisicaoSection = () => {
           label="Taxa de Conversão"
           value={`${taxaConversao.toFixed(1)}%`}
           sub={`${totalCustomers} de ${totalLeads} leads`}
+        />
+        <MetricCard
+          icon={Target}
+          label="Conversão (Vendas)"
+          value={`${taxaTentativas.toFixed(1)}%`}
+          sub={`${totalVendas} vendas de ${totalTentativas} tentativas`}
         />
         <MetricCard
           icon={Percent}
