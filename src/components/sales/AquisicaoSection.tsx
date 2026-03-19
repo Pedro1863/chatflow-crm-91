@@ -68,6 +68,12 @@ const AquisicaoSection = () => {
           sub={`${totalCustomers} de ${totalLeads} leads`}
         />
         <MetricCard
+          icon={Target}
+          label="Conversão (Vendas)"
+          value={`${taxaTentativas.toFixed(1)}%`}
+          sub={`${totalVendas} vendas de ${totalTentativas} tentativas`}
+        />
+        <MetricCard
           icon={Percent}
           label="% Novos na Base"
           value={`${(totalCustomers > 0 ? (novosClientes / totalCustomers) * 100 : 0).toFixed(1)}%`}
