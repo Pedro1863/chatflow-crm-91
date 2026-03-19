@@ -83,12 +83,13 @@ Body:
 {
   "nome": "Maria Silva",
   "telefone": "+5511999999999",
+  "bling_id": "12345678",
   "data_primeiro_contato": "2025-01-15T10:00:00Z",
   "data_conversao": "2025-02-01T14:30:00Z",
   "total_pedidos": 1,
   "valor_total_comprado": 1500.00,
   "data_ultimo_pedido": "2025-02-01T14:30:00Z",
-  "origem_lead": "whatsapp",
+  "origem_lead": "bling",
   "status_cliente": "ativo"
 }`}
                   </pre>
@@ -115,7 +116,13 @@ Headers:
   apikey: ${SUPABASE_ANON_KEY}
   Content-Type: application/json
   Prefer: return=representation
-Body:
+Body (via Bling ID - recomendado):
+{
+  "_bling_id": "12345678",
+  "_valor_pedido": 500.00
+}
+
+Body (via telefone - fallback):
 {
   "_telefone": "+5511999999999",
   "_valor_pedido": 500.00
@@ -283,12 +290,13 @@ Body:
               <pre className="text-xs text-foreground whitespace-pre-wrap">
 {`nome              (text)      - Nome do cliente
 telefone          (text)      - Telefone com código do país
+bling_id          (text)      - ID do contato no Bling (recomendado)
 data_primeiro_contato (timestamp) - Data do primeiro contato
 data_conversao    (timestamp) - Data da conversão
 total_pedidos     (integer)   - Quantidade total de pedidos
 valor_total_comprado (numeric) - Valor total comprado (R$)
 data_ultimo_pedido (timestamp) - Data do último pedido
-origem_lead       (text)      - Origem (whatsapp, instagram, etc)
+origem_lead       (text)      - Origem (whatsapp, bling, etc)
 status_cliente    (text)      - Status (ativo, inativo, churned)`}
               </pre>
             </div>
