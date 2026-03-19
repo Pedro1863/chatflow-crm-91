@@ -203,6 +203,7 @@ export type Database = {
           id: string
           motivo_perda: string | null
           nome: string | null
+          origem_tentativa: string
           popup_ciclo_data: string | null
           popup_exibido: boolean
           salvo_manualmente: boolean
@@ -218,6 +219,7 @@ export type Database = {
           id?: string
           motivo_perda?: string | null
           nome?: string | null
+          origem_tentativa?: string
           popup_ciclo_data?: string | null
           popup_exibido?: boolean
           salvo_manualmente?: boolean
@@ -233,6 +235,7 @@ export type Database = {
           id?: string
           motivo_perda?: string | null
           nome?: string | null
+          origem_tentativa?: string
           popup_ciclo_data?: string | null
           popup_exibido?: boolean
           salvo_manualmente?: boolean
