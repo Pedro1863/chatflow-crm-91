@@ -1,7 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageSquare, BarChart3 } from "lucide-react";
+import { MessageSquare, BarChart3, BookOpen } from "lucide-react";
 import CrmIntegrationTab from "@/components/settings/CrmIntegrationTab";
 import MetricsIntegrationTab from "@/components/settings/MetricsIntegrationTab";
+import SystemDocumentationTab from "@/components/settings/SystemDocumentationTab";
 
 const SettingsPage = () => {
   return (
@@ -18,6 +19,10 @@ const SettingsPage = () => {
             <BarChart3 className="h-4 w-4" />
             Métricas de Vendas
           </TabsTrigger>
+          <TabsTrigger value="docs" className="flex-1 gap-2">
+            <BookOpen className="h-4 w-4" />
+            Documentação
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="crm">
@@ -26,6 +31,10 @@ const SettingsPage = () => {
 
         <TabsContent value="metrics">
           <MetricsIntegrationTab />
+        </TabsContent>
+
+        <TabsContent value="docs">
+          <SystemDocumentationTab />
         </TabsContent>
       </Tabs>
     </div>
