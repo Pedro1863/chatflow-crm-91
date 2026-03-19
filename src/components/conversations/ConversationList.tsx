@@ -11,7 +11,7 @@ interface Props {
 }
 
 const statusLabels: Record<string, string> = {
-  novo_lead: "Novo Lead",
+  novo_lead: "Sem Produto",
   contato_iniciado: "Contato Iniciado",
   proposta_enviada: "Proposta Enviada",
   cliente: "Cliente",
