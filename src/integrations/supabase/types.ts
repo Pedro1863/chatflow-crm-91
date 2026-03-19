@@ -153,6 +153,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          bling_id: string | null
           data_conversao: string | null
           data_primeiro_contato: string | null
           data_ultimo_pedido: string | null
@@ -165,6 +166,7 @@ export type Database = {
           valor_total_comprado: number | null
         }
         Insert: {
+          bling_id?: string | null
           data_conversao?: string | null
           data_primeiro_contato?: string | null
           data_ultimo_pedido?: string | null
@@ -177,6 +179,7 @@ export type Database = {
           valor_total_comprado?: number | null
         }
         Update: {
+          bling_id?: string | null
           data_conversao?: string | null
           data_primeiro_contato?: string | null
           data_ultimo_pedido?: string | null
@@ -376,6 +379,7 @@ export type Database = {
       registrar_pedido: {
         Args: { _telefone: string; _valor_pedido?: number }
         Returns: {
+          bling_id: string | null
           data_conversao: string | null
           data_primeiro_contato: string | null
           data_ultimo_pedido: string | null
