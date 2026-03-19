@@ -35,19 +35,21 @@ export function useRegisterLeadAttempt() {
       etapa_pipeline: string;
       origem?: string | null;
       salvo_manualmente?: boolean;
+      origem_tentativa: "manual" | "popup" | "pipeline";
     }) => {
-      // Duplicate check: same phone, same etapa, within last 4 hours
-      const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+      // Duplicate check: same phone + same etapa + same day
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
       const { data: existing } = await supabase
         .from("leads_pipeline")
         .select("id")
         .eq("telefone", params.telefone)
         .eq("etapa_pipeline", params.etapa_pipeline)
-        .gte("data_interacao", fourHoursAgo)
+        .gte("data_interacao", todayStart.toISOString())
         .limit(1);
 
       if (existing && existing.length > 0) {
-        // Duplicate found — but if this is a manual save, upgrade the existing entry
+        // Duplicate found — if manual save, upgrade existing entry
         if (params.salvo_manualmente) {
           await supabase
             .from("leads_pipeline")
@@ -69,6 +71,7 @@ export function useRegisterLeadAttempt() {
           status: "perdido",
           convertido: false,
           salvo_manualmente: params.salvo_manualmente ?? false,
+          origem_tentativa: params.origem_tentativa,
           popup_exibido: false,
           popup_ciclo_data: new Date().toISOString().slice(0, 10),
           data_interacao: new Date().toISOString(),
