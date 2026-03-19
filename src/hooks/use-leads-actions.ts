@@ -47,7 +47,16 @@ export function useRegisterLeadAttempt() {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        // Already registered recently, skip
+        // Duplicate found — but if this is a manual save, upgrade the existing entry
+        if (params.salvo_manualmente) {
+          await supabase
+            .from("leads_pipeline")
+            .update({
+              salvo_manualmente: true,
+              popup_exibido: true,
+            } as any)
+            .eq("id", existing[0].id);
+        }
         return existing[0];
       }
 
