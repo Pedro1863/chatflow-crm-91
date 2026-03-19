@@ -23,7 +23,9 @@ const AquisicaoSection = () => {
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
 
   const clientesComPedido = customers.filter((c) => (c.total_pedidos || 0) >= 1);
-  const totalLeads = leads.length + clientesComPedido.length;
+  // Leads únicos (por telefone) para taxa de conversão de clientes
+  const leadsUnicos = new Set(leads.map((l) => l.telefone)).size;
+  const totalLeads = leadsUnicos + clientesComPedido.length;
   const totalCustomers = clientesComPedido.length;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
 
@@ -65,7 +67,7 @@ const AquisicaoSection = () => {
           icon={TrendingUp}
           label="Taxa de Conversão"
           value={`${taxaConversao.toFixed(1)}%`}
-          sub={`${totalCustomers} de ${totalLeads} leads`}
+          sub={`${totalCustomers} de ${totalLeads} leads únicos`}
         />
         <MetricCard
           icon={Target}

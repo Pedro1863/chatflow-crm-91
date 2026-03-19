@@ -167,7 +167,7 @@ const metricas = [
       },
       {
         nome: "Taxa de Conversão (Clientes)",
-        formula: "clientes_com_pedido / (leads_pipeline.count + clientes_com_pedido) × 100",
+        formula: "clientes_com_pedido / (leads_únicos_por_telefone + clientes_com_pedido) × 100",
         tabelas: ["customers", "leads_pipeline"],
         campos: ["total_pedidos (≥1)"],
         descricao: "Percentual de leads que viraram clientes com pelo menos 1 pedido. Clientes com total_pedidos = 0 são ignorados. Conta clientes únicos.",
