@@ -1,5 +1,5 @@
 import { useContatos, useUpdateContato } from "@/hooks/use-crm-data";
-import { useIsCustomer, useRegisterLeadAttempt } from "@/hooks/use-leads-actions";
+import { useRegisterLeadAttempt, useMarkLeadConverted } from "@/hooks/use-leads-actions";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
