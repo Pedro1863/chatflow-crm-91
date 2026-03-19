@@ -26,6 +26,11 @@ const AquisicaoSection = () => {
   const totalLeads = leads.length + clientesComPedido.length;
   const totalCustomers = clientesComPedido.length;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
+
+  // Taxa de conversão por tentativas de venda
+  const totalVendas = customers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
+  const totalTentativas = leads.length + totalVendas;
+  const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
   const novosClientes = customers.filter((c) => c.total_pedidos === 1).length;
 
   // Trend: compare last two months of new clients
