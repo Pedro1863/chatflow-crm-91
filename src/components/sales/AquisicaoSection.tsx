@@ -67,7 +67,7 @@ const AquisicaoSection = () => {
           icon={TrendingUp}
           label="Taxa de Conversão"
           value={`${taxaConversao.toFixed(1)}%`}
-          sub={`${totalCustomers} de ${totalLeads} leads`}
+          sub={`${totalCustomers} de ${totalLeads} leads únicos`}
         />
         <MetricCard
           icon={Target}
