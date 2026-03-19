@@ -189,7 +189,11 @@ export function InactivityPopup() {
         salvo_manualmente: false, // popup = not manual
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          // Mark popup as shown for this entry
+          if (data?.id) {
+            markPopupShown.mutate({ telefone: currentItem.telefone, leadId: data.id });
+          }
           toast.success(`Tentativa registrada para ${currentItem.nome || currentItem.telefone}`);
           setProcessedPhones((prev) => new Set(prev).add(currentItem.telefone));
           qc.invalidateQueries({ queryKey: ["leads_pipeline_all"] });
