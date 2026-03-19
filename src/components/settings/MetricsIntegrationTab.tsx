@@ -115,7 +115,13 @@ Headers:
   apikey: ${SUPABASE_ANON_KEY}
   Content-Type: application/json
   Prefer: return=representation
-Body:
+Body (via Bling ID - recomendado):
+{
+  "_bling_id": "12345678",
+  "_valor_pedido": 500.00
+}
+
+Body (via telefone - fallback):
 {
   "_telefone": "+5511999999999",
   "_valor_pedido": 500.00
