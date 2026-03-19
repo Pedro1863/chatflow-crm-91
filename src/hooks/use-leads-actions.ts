@@ -53,6 +53,8 @@ export function useRegisterLeadAttempt() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["leads_pipeline"] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+      qc.invalidateQueries({ queryKey: ["contato"] });
     },
   });
 }
