@@ -186,7 +186,8 @@ export function InactivityPopup() {
         nome: currentItem.nome,
         etapa_pipeline: etapa,
         origem: currentItem.origem,
-        salvo_manualmente: false, // popup = not manual
+        salvo_manualmente: false,
+        origem_tentativa: "popup",
       },
       {
         onSuccess: (data) => {

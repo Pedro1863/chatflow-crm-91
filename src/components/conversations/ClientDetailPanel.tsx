@@ -73,6 +73,7 @@ export function ClientDetailPanel({ contatoId }: Props) {
               etapa_pipeline: etapa,
               origem: contato.origem,
               salvo_manualmente: true,
+              origem_tentativa: "manual",
             });
           }
         },

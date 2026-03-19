@@ -54,7 +54,7 @@ const PipelinePage = () => {
             // Mark latest attempt as converted
             markConverted.mutate(contato.telefone);
           } else {
-            // Register as manual attempt (blocks popup)
+            // Register as pipeline attempt (only on intentional stage changes)
             const etapa = stageToEtapa[newStage] || stageToEtapa[oldStage] || "primeiro_contato_sem_resposta";
             registerAttempt.mutate({
               telefone: contato.telefone,
@@ -62,6 +62,7 @@ const PipelinePage = () => {
               etapa_pipeline: etapa,
               origem: contato.origem,
               salvo_manualmente: true,
+              origem_tentativa: "pipeline",
             });
           }
         },
