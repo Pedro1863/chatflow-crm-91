@@ -1,5 +1,5 @@
 import { useContatos, useUpdateContato } from "@/hooks/use-crm-data";
-import { useIsCustomer, useRegisterLeadAttempt } from "@/hooks/use-leads-actions";
+import { useRegisterLeadAttempt, useMarkLeadConverted } from "@/hooks/use-leads-actions";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,7 @@ const PipelinePage = () => {
   const { data: contatos = [] } = useContatos();
   const updateContato = useUpdateContato();
   const registerAttempt = useRegisterLeadAttempt();
+  const markConverted = useMarkLeadConverted();
   const qc = useQueryClient();
 
   const contatosByStage = stages.reduce((acc, stage) => {
@@ -42,33 +43,28 @@ const PipelinePage = () => {
     const oldStage = contato.status_funil;
     if (oldStage === newStage) return;
 
-    // If moving backwards or to a non-final stage, register a lead attempt
-    // (e.g., moving from proposta_enviada back means that attempt failed)
-    if (oldStage !== "novo_lead" && newStage !== "cliente" && stageToEtapa[oldStage]) {
-      // Check if this phone is already a customer
-      const { data: customers } = await supabase
-        .from("customers")
-        .select("id")
-        .eq("telefone", contato.telefone)
-        .limit(1);
-
-      const isCustomer = (customers?.length ?? 0) > 0;
-
-      if (!isCustomer) {
-        registerAttempt.mutate({
-          telefone: contato.telefone,
-          nome: contato.nome,
-          etapa_pipeline: stageToEtapa[oldStage],
-          origem: contato.origem,
-        });
-      }
-    }
-
     // Update the contato status
     updateContato.mutate(
       { id: contato.id, status_funil: newStage },
       {
-        onSuccess: () => toast.success(`Movido para ${statusLabels[newStage]}`),
+        onSuccess: () => {
+          toast.success(`Movido para ${statusLabels[newStage]}`);
+
+          if (newStage === "cliente") {
+            // Mark latest attempt as converted
+            markConverted.mutate(contato.telefone);
+          } else {
+            // Register as manual attempt (blocks popup)
+            const etapa = stageToEtapa[newStage] || stageToEtapa[oldStage] || "primeiro_contato_sem_resposta";
+            registerAttempt.mutate({
+              telefone: contato.telefone,
+              nome: contato.nome,
+              etapa_pipeline: etapa,
+              origem: contato.origem,
+              salvo_manualmente: true,
+            });
+          }
+        },
       }
     );
   };

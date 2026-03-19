@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useContatos } from "@/hooks/use-crm-data";
 import { useRegisterLeadAttempt } from "@/hooks/use-leads-actions";
@@ -34,19 +34,16 @@ type QueueItem = {
   lastMessageAt: string;
 };
 
-/** Fetch the last message timestamp for every contato in a single query */
+/** Fetch the last message timestamp for every contato */
 function useLastMessages() {
   return useQuery({
     queryKey: ["last_messages_all"],
     queryFn: async () => {
-      // Get the most recent message per contato using a raw approach:
-      // fetch all mensagens ordered desc, then deduplicate client-side
       const { data, error } = await supabase
         .from("mensagens")
         .select("contato_id, timestamp")
         .order("timestamp", { ascending: false });
       if (error) throw error;
-
       const map = new Map<string, string>();
       for (const row of data ?? []) {
         if (!map.has(row.contato_id)) {
@@ -64,9 +61,7 @@ function useCustomerPhones() {
   return useQuery({
     queryKey: ["customer_phones"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("telefone");
+      const { data, error } = await supabase.from("customers").select("telefone");
       if (error) throw error;
       return new Set((data ?? []).map((c) => c.telefone));
     },
@@ -74,73 +69,91 @@ function useCustomerPhones() {
   });
 }
 
-/** Fetch leads_pipeline entries to know which inactivity periods are already classified */
+/** Fetch leads_pipeline entries with manual save and popup control info */
 function useLeadsPipeline() {
   return useQuery({
     queryKey: ["leads_pipeline_all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leads_pipeline")
-        .select("telefone, data_interacao")
+        .select("telefone, data_interacao, salvo_manualmente, popup_exibido, popup_ciclo_data")
         .order("data_interacao", { ascending: false });
       if (error) throw error;
-
-      // Map phone -> most recent data_interacao
-      const map = new Map<string, string>();
-      for (const row of data ?? []) {
-        if (!map.has(row.telefone)) {
-          map.set(row.telefone, row.data_interacao ?? "");
-        }
-      }
-      return map;
+      return data ?? [];
     },
     staleTime: 30_000,
   });
 }
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
   const { data: lastMessages } = useLastMessages();
   const { data: customerPhones } = useCustomerPhones();
-  const { data: leadsPipeline } = useLeadsPipeline();
+  const { data: pipelineEntries } = useLeadsPipeline();
   const registerAttempt = useRegisterLeadAttempt();
   const qc = useQueryClient();
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
-  // Track phones already processed in this session to avoid re-queuing after invalidation
   const [processedPhones, setProcessedPhones] = useState<Set<string>>(new Set());
 
-  // Build the queue of eligible contacts
+  // Build queue: only contacts that qualify as fallback
   const queue = useMemo<QueueItem[]>(() => {
-    if (!lastMessages || !customerPhones || !leadsPipeline) return [];
+    if (!lastMessages || !customerPhones || !pipelineEntries) return [];
 
     const now = Date.now();
+    const todayStr = today();
     const eligible: QueueItem[] = [];
 
+    // Build per-phone pipeline state from most recent entry
+    const phoneState = new Map<string, {
+      dataInteracao: string;
+      salvoManualmente: boolean;
+      popupExibido: boolean;
+      popupCicloData: string | null;
+    }>();
+    for (const entry of pipelineEntries) {
+      if (!phoneState.has(entry.telefone)) {
+        phoneState.set(entry.telefone, {
+          dataInteracao: entry.data_interacao ?? "",
+          salvoManualmente: (entry as any).salvo_manualmente ?? false,
+          popupExibido: (entry as any).popup_exibido ?? false,
+          popupCicloData: (entry as any).popup_ciclo_data ?? null,
+        });
+      }
+    }
+
     for (const contato of contatos) {
-      // Skip if already a customer
+      // Skip customers
       if (customerPhones.has(contato.telefone)) continue;
-
-      // Skip if already "cliente" stage
       if (contato.status_funil === "cliente") continue;
-
-      // Skip if processed this session
+      // Skip if already processed this session
       if (processedPhones.has(contato.telefone)) continue;
 
-      // Check last message time
+      // Check inactivity
       const lastMsgTime = lastMessages.get(contato.id);
       if (!lastMsgTime) continue;
-
       const elapsed = now - new Date(lastMsgTime).getTime();
       if (elapsed < INACTIVITY_MS) continue;
 
-      // Check if already classified for this inactivity period:
-      // If the most recent leads_pipeline entry for this phone has data_interacao
-      // AFTER the last message, it means this inactivity was already handled
-      const lastPipelineTime = leadsPipeline.get(contato.telefone);
-      if (lastPipelineTime && new Date(lastPipelineTime).getTime() > new Date(lastMsgTime).getTime()) {
-        continue;
+      const state = phoneState.get(contato.telefone);
+
+      if (state) {
+        const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > new Date(lastMsgTime).getTime();
+
+        if (pipelineAfterMsg) {
+          // There's a pipeline entry after the last message
+          // If it was saved manually → popup blocked for this attempt
+          if (state.salvoManualmente) continue;
+
+          // If popup already shown today for this cycle → skip
+          if (state.popupExibido && state.popupCicloData === todayStr) continue;
+
+          // If popup was shown on a previous day, it resets (new cycle)
+          // Allow it to show again
+        }
       }
 
       eligible.push({
@@ -153,9 +166,8 @@ export function InactivityPopup() {
     }
 
     return eligible;
-  }, [contatos, lastMessages, customerPhones, leadsPipeline, processedPhones]);
+  }, [contatos, lastMessages, customerPhones, pipelineEntries, processedPhones]);
 
-  // Reset index when queue changes
   useEffect(() => {
     setCurrentIndex(0);
     setDismissed(false);
@@ -173,15 +185,13 @@ export function InactivityPopup() {
         nome: currentItem.nome,
         etapa_pipeline: etapa,
         origem: currentItem.origem,
+        salvo_manualmente: false, // popup = not manual
       },
       {
         onSuccess: () => {
           toast.success(`Tentativa registrada para ${currentItem.nome || currentItem.telefone}`);
-          // Mark as processed this session
           setProcessedPhones((prev) => new Set(prev).add(currentItem.telefone));
-          // Invalidate leads pipeline cache
           qc.invalidateQueries({ queryKey: ["leads_pipeline_all"] });
-          // Move to next
           if (currentIndex < total - 1) {
             setCurrentIndex((i) => i + 1);
           } else {
@@ -201,9 +211,7 @@ export function InactivityPopup() {
     }
   };
 
-  const handleDismissAll = () => {
-    setDismissed(true);
-  };
+  const handleDismissAll = () => setDismissed(true);
 
   if (!isOpen) return null;
 
@@ -242,9 +250,7 @@ export function InactivityPopup() {
           ))}
         </div>
         <AlertDialogFooter className="flex-row gap-2 sm:justify-between">
-          <AlertDialogCancel onClick={handleDismissAll}>
-            Ignorar todos
-          </AlertDialogCancel>
+          <AlertDialogCancel onClick={handleDismissAll}>Ignorar todos</AlertDialogCancel>
           {total > 1 && (
             <Button variant="ghost" size="sm" onClick={handleSkip}>
               Pular este →

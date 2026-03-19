@@ -1,4 +1,5 @@
 import { useContato, useUpdateContato } from "@/hooks/use-crm-data";
+import { useRegisterLeadAttempt, useMarkLeadConverted } from "@/hooks/use-leads-actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,9 +19,18 @@ const statusLabels: Record<string, string> = {
   cliente: "Cliente",
 };
 
+// Map funnel stages to pipeline etapas for lead attempts
+const stageToEtapa: Record<string, string> = {
+  novo_lead: "primeiro_contato_sem_resposta",
+  contato_iniciado: "primeiro_contato_sem_resposta",
+  proposta_enviada: "proposta_sem_resposta",
+};
+
 export function ClientDetailPanel({ contatoId }: Props) {
   const { data: contato, isLoading } = useContato(contatoId);
   const updateContato = useUpdateContato();
+  const registerAttempt = useRegisterLeadAttempt();
+  const markConverted = useMarkLeadConverted();
 
   const [form, setForm] = useState({
     nome: "",
@@ -41,9 +51,32 @@ export function ClientDetailPanel({ contatoId }: Props) {
   }, [contato]);
 
   const handleSave = () => {
+    if (!contato) return;
+
+    // 1. Update the contato
     updateContato.mutate(
       { id: contatoId, ...form },
-      { onSuccess: () => toast.success("Contato atualizado!") }
+      {
+        onSuccess: () => {
+          toast.success("Contato atualizado!");
+
+          // 2. Register lead attempt based on the stage
+          if (form.status_funil === "cliente") {
+            // Mark latest attempt as converted
+            markConverted.mutate(contato.telefone);
+          } else {
+            // Register as new attempt (salvo_manualmente = true blocks popup)
+            const etapa = stageToEtapa[form.status_funil] || "primeiro_contato_sem_resposta";
+            registerAttempt.mutate({
+              telefone: contato.telefone,
+              nome: form.nome || contato.nome,
+              etapa_pipeline: etapa,
+              origem: contato.origem,
+              salvo_manualmente: true,
+            });
+          }
+        },
+      }
     );
   };
 
