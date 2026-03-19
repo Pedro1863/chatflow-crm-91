@@ -290,12 +290,13 @@ Body:
               <pre className="text-xs text-foreground whitespace-pre-wrap">
 {`nome              (text)      - Nome do cliente
 telefone          (text)      - Telefone com código do país
+bling_id          (text)      - ID do contato no Bling (recomendado)
 data_primeiro_contato (timestamp) - Data do primeiro contato
 data_conversao    (timestamp) - Data da conversão
 total_pedidos     (integer)   - Quantidade total de pedidos
 valor_total_comprado (numeric) - Valor total comprado (R$)
 data_ultimo_pedido (timestamp) - Data do último pedido
-origem_lead       (text)      - Origem (whatsapp, instagram, etc)
+origem_lead       (text)      - Origem (whatsapp, bling, etc)
 status_cliente    (text)      - Status (ativo, inativo, churned)`}
               </pre>
             </div>
