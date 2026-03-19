@@ -17,7 +17,7 @@ const ConversationsPage = () => {
       {selectedContatoId && (
         <ClientDetailPanel contatoId={selectedContatoId} />
       )}
-      <InactivityPopup contatoId={selectedContatoId} />
+      <InactivityPopup />
     </div>
   );
 };
