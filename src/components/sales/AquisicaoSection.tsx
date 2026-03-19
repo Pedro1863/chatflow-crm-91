@@ -22,8 +22,9 @@ const AquisicaoSection = () => {
   const { data: leads = [] } = useLeadsPipeline();
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
 
-  const totalLeads = leads.length + customers.length;
-  const totalCustomers = customers.length;
+  const clientesComPedido = customers.filter((c) => (c.total_pedidos || 0) >= 1);
+  const totalLeads = leads.length + clientesComPedido.length;
+  const totalCustomers = clientesComPedido.length;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
   const novosClientes = customers.filter((c) => c.total_pedidos === 1).length;
 
