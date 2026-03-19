@@ -93,6 +93,7 @@ export function InactivityPopup() {
   const { data: customerPhones } = useCustomerPhones();
   const { data: pipelineEntries } = useLeadsPipeline();
   const registerAttempt = useRegisterLeadAttempt();
+  const markPopupShown = useMarkPopupShown();
   const qc = useQueryClient();
 
   const [currentIndex, setCurrentIndex] = useState(0);
