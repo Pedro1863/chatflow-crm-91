@@ -33,7 +33,15 @@ const AquisicaoSection = () => {
   const totalVendas = customers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
   const totalTentativas = leads.length + totalVendas;
   const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
-  const novosClientes = customers.filter((c) => c.total_pedidos === 1).length;
+
+  // Novos clientes = data_conversao no mês atual (imutável, registrado apenas na 1ª compra)
+  const now = new Date();
+  const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const novosClientes = customers.filter((c) => {
+    if (!c.data_conversao) return false;
+    const conv = c.data_conversao.slice(0, 7); // "YYYY-MM"
+    return conv === mesAtual;
+  }).length;
 
   // Trend: compare last two months of new clients
   const lastMonth = monthlyData.length >= 1 ? monthlyData[monthlyData.length - 1] : null;
