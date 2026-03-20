@@ -86,7 +86,7 @@ function useLeadsPipeline() {
   });
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+
 
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
