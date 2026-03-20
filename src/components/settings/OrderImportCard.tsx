@@ -6,21 +6,13 @@ import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2, X } from "lucid
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type Inconsistencia = {
-  bling_id: string | null;
-  telefone: string | null;
-  nome: string | null;
-  valor: number;
-  motivo: string;
-};
-
 type ImportResult = {
-  total_pedidos: number;
+  total_linhas_csv: number;
+  total_pedidos_agrupados: number;
   vinculados: number;
   falhas: number;
   clientes_atualizados: number;
   leads_convertidos: number;
-  inconsistencias: Inconsistencia[];
 };
 
 const OrderImportCard = () => {
@@ -144,8 +136,12 @@ const OrderImportCard = () => {
             <h4 className="text-sm font-semibold">Resumo da Importação</h4>
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-muted rounded-lg p-3 text-center">
-                <p className="text-lg font-bold">{result.total_pedidos}</p>
-                <p className="text-xs text-muted-foreground">Total de pedidos</p>
+                <p className="text-lg font-bold">{result.total_linhas_csv}</p>
+                <p className="text-xs text-muted-foreground">Linhas no CSV</p>
+              </div>
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <p className="text-lg font-bold">{result.total_pedidos_agrupados}</p>
+                <p className="text-xs text-muted-foreground">Pedidos agrupados</p>
               </div>
               <div className="bg-green-500/10 rounded-lg p-3 text-center">
                 <p className="text-lg font-bold text-green-600">{result.vinculados}</p>
@@ -159,27 +155,13 @@ const OrderImportCard = () => {
                 <p className="text-lg font-bold">{result.leads_convertidos}</p>
                 <p className="text-xs text-muted-foreground">Leads convertidos</p>
               </div>
+              {result.falhas > 0 && (
+                <div className="bg-destructive/10 rounded-lg p-3 text-center">
+                  <p className="text-lg font-bold text-destructive">{result.falhas}</p>
+                  <p className="text-xs text-muted-foreground">Não vinculados</p>
+                </div>
+              )}
             </div>
-
-            {result.falhas > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="font-medium">{result.falhas} inconsistências</span>
-                </div>
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {result.inconsistencias.map((inc, i) => (
-                    <div key={i} className="bg-destructive/5 border border-destructive/20 rounded p-2 text-xs">
-                      <p><strong>Motivo:</strong> {inc.motivo}</p>
-                      {inc.bling_id && <p>Bling ID: {inc.bling_id}</p>}
-                      {inc.telefone && <p>Telefone: {inc.telefone}</p>}
-                      {inc.nome && <p>Nome: {inc.nome}</p>}
-                      {inc.valor > 0 && <p>Valor: R$ {inc.valor.toFixed(2)}</p>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {result.falhas === 0 && (
               <div className="flex items-center gap-1.5 text-sm text-green-600">
