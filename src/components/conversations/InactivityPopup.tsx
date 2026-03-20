@@ -34,14 +34,15 @@ type QueueItem = {
   lastMessageAt: string;
 };
 
-/** Fetch the last message timestamp for every contato */
-function useLastMessages() {
+/** Fetch the last INCOMING message timestamp for every contato (only client messages) */
+function useLastIncomingMessages() {
   return useQuery({
-    queryKey: ["last_messages_all"],
+    queryKey: ["last_incoming_messages_all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("mensagens")
         .select("contato_id, timestamp")
+        .eq("direcao", "entrada")
         .order("timestamp", { ascending: false });
       if (error) throw error;
       const map = new Map<string, string>();
@@ -85,11 +86,11 @@ function useLeadsPipeline() {
   });
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+
 
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
-  const { data: lastMessages } = useLastMessages();
+  const { data: lastMessages } = useLastIncomingMessages();
   const { data: customerPhones } = useCustomerPhones();
   const { data: pipelineEntries } = useLeadsPipeline();
   const registerAttempt = useRegisterLeadAttempt();
@@ -105,7 +106,6 @@ export function InactivityPopup() {
     if (!lastMessages || !customerPhones || !pipelineEntries) return [];
 
     const now = Date.now();
-    const todayStr = today();
     const eligible: QueueItem[] = [];
 
     // Build per-phone pipeline state from most recent entry
@@ -145,15 +145,17 @@ export function InactivityPopup() {
         const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > new Date(lastMsgTime).getTime();
 
         if (pipelineAfterMsg) {
-          // There's a pipeline entry after the last message
-          // If it was saved manually → popup blocked for this attempt
+          // There's a pipeline entry after the last incoming message
+          // If it was saved manually → popup blocked
           if (state.salvoManualmente) continue;
 
-          // If popup already shown today for this cycle → skip
-          if (state.popupExibido && state.popupCicloData === todayStr) continue;
-
-          // If popup was shown on a previous day, it resets (new cycle)
-          // Allow it to show again
+          // If popup already shown for this cycle AND no new client message since → skip
+          if (state.popupExibido && state.popupCicloData) {
+            const cicloDate = new Date(state.popupCicloData + "T23:59:59").getTime();
+            const lastMsgDate = new Date(lastMsgTime).getTime();
+            // Only re-show if client sent a NEW message AFTER the last popup cycle
+            if (lastMsgDate <= cicloDate) continue;
+          }
         }
       }
 
