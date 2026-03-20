@@ -43,7 +43,13 @@ const AquisicaoSection = ({ totalMeses, mesSelecionado }: Props) => {
   const totalVendas = filteredCustomers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
   const totalTentativas = filteredLeads.length + totalVendas;
   const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
-  const novosClientes = filteredCustomers.filter((c) => c.total_pedidos === 1).length;
+
+  // Novos clientes = data_conversao dentro do mês (independente de total_pedidos)
+  const novosClientes = filteredCustomers.filter((c) => {
+    if (!c.data_conversao) return false;
+    if (mesSelecionado === "todos") return true;
+    return c.data_conversao.startsWith(mesSelecionado);
+  }).length;
 
   const lastMonth = monthlyData.length >= 1 ? monthlyData[monthlyData.length - 1] : null;
   const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null;
