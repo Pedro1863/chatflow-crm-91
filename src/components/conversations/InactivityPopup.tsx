@@ -106,7 +106,6 @@ export function InactivityPopup() {
     if (!lastMessages || !customerPhones || !pipelineEntries) return [];
 
     const now = Date.now();
-    const todayStr = today();
     const eligible: QueueItem[] = [];
 
     // Build per-phone pipeline state from most recent entry
