@@ -364,30 +364,32 @@ function RegrasSection() {
         </RuleCard>
 
         <RuleCard title="Popup de Inatividade">
-          <p>O popup aparece quando:</p>
+          <p>O popup aparece quando <strong>TODAS</strong> as condições são verdadeiras:</p>
           <ul className="list-disc list-inside space-y-1">
-            <li>Contato ficou <strong>+4 horas</strong> sem interação (última mensagem)</li>
-            <li><strong>Não</strong> foi salvo manualmente recentemente</li>
+            <li>O cliente enviou uma <strong>mensagem de entrada</strong> (direção = entrada)</li>
+            <li>Já se passaram <strong>+4 horas</strong> desde essa última mensagem de entrada</li>
+            <li>A última mensagem de entrada é <strong>mais recente</strong> que o último <code className="bg-muted px-1 rounded text-xs">popup_ciclo_data</code></li>
+            <li><strong>Não</strong> foi salvo manualmente no pipeline após essa interação</li>
             <li><strong>Não</strong> é cliente (não está na tabela customers)</li>
-            <li>Popup <strong>não</strong> foi exibido hoje para esse contato</li>
           </ul>
+          <p className="text-xs mt-2 text-muted-foreground italic">⚠️ Apenas mensagens de entrada do cliente são consideradas. Mensagens de saída (vendedor) não reiniciam o ciclo.</p>
         </RuleCard>
 
         <RuleCard title="Bloqueio do Popup">
           <p>O popup é <strong>bloqueado</strong> quando:</p>
           <ul className="list-disc list-inside space-y-1">
             <li>Contato foi <strong>salvo manualmente</strong> no pipeline → <code className="bg-muted px-1 rounded text-xs">salvo_manualmente = true</code></li>
-            <li>Popup já foi exibido <strong>hoje</strong> → <code className="bg-muted px-1 rounded text-xs">popup_exibido = true</code> + <code className="bg-muted px-1 rounded text-xs">popup_ciclo_data = hoje</code></li>
+            <li>Popup já foi exibido e <strong>não houve nova mensagem de entrada</strong> do cliente desde o último ciclo</li>
           </ul>
         </RuleCard>
 
         <RuleCard title="Ciclo de Reinício do Popup">
-          <p>O popup <strong>volta a funcionar</strong> no dia seguinte:</p>
+          <p>O popup <strong>só volta a funcionar</strong> quando:</p>
           <ul className="list-disc list-inside space-y-1">
-            <li>O controle é feito pelo campo <code className="bg-muted px-1 rounded text-xs">popup_ciclo_data</code></li>
-            <li>Se a data mudou (novo dia) → <code className="bg-muted px-1 rounded text-xs">popup_exibido</code> é ignorado</li>
-            <li>Se o contato interagir novamente e não for salvo em 4h → popup reaparece</li>
-            <li>Se foi salvo manualmente → popup permanece bloqueado até nova interação sem ação</li>
+            <li>O <strong>cliente envia uma nova mensagem</strong> (entrada) após o último <code className="bg-muted px-1 rounded text-xs">popup_ciclo_data</code></li>
+            <li>Se passam +4h sem ação manual</li>
+            <li><strong>Mudança de dia NÃO libera</strong> o popup automaticamente — é necessária nova interação do cliente</li>
+            <li>Se foi salvo manualmente → popup permanece bloqueado até nova mensagem de entrada sem ação</li>
           </ul>
         </RuleCard>
 
