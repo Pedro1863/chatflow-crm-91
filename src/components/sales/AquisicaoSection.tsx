@@ -68,7 +68,7 @@ const AquisicaoSection = () => {
           icon={UserPlus}
           label="Novos Clientes"
           value={novosClientes}
-          sub="1 pedido realizado"
+          sub={`Convertidos em ${mesAtual}`}
           trend={trendNovos}
         />
         <MetricCard
