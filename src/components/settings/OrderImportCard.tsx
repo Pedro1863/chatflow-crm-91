@@ -6,21 +6,13 @@ import { Upload, FileText, CheckCircle2, AlertTriangle, Loader2, X } from "lucid
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type Inconsistencia = {
-  bling_id: string | null;
-  telefone: string | null;
-  nome: string | null;
-  valor: number;
-  motivo: string;
-};
-
 type ImportResult = {
-  total_pedidos: number;
+  total_linhas_csv: number;
+  total_pedidos_agrupados: number;
   vinculados: number;
   falhas: number;
   clientes_atualizados: number;
   leads_convertidos: number;
-  inconsistencias: Inconsistencia[];
 };
 
 const OrderImportCard = () => {
