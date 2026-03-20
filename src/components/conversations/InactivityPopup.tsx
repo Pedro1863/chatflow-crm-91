@@ -34,14 +34,15 @@ type QueueItem = {
   lastMessageAt: string;
 };
 
-/** Fetch the last message timestamp for every contato */
-function useLastMessages() {
+/** Fetch the last INCOMING message timestamp for every contato (only client messages) */
+function useLastIncomingMessages() {
   return useQuery({
-    queryKey: ["last_messages_all"],
+    queryKey: ["last_incoming_messages_all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("mensagens")
         .select("contato_id, timestamp")
+        .eq("direcao", "entrada")
         .order("timestamp", { ascending: false });
       if (error) throw error;
       const map = new Map<string, string>();
