@@ -21,6 +21,9 @@ const CrmIntegrationTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Importação de pedidos */}
+      <OrderImportCard />
+
       {/* Webhook n8n - Envio de mensagens */}
       <Card className="border-primary/30">
         <CardHeader>
