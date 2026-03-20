@@ -8,6 +8,7 @@ const corsHeaders = {
 
 interface OrderRow {
   bling_id?: string;
+  order_id?: string;
   telefone?: string;
   valor_pedido: number;
   data_pedido?: string;
