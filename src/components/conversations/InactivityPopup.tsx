@@ -90,7 +90,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
-  const { data: lastMessages } = useLastMessages();
+  const { data: lastMessages } = useLastIncomingMessages();
   const { data: customerPhones } = useCustomerPhones();
   const { data: pipelineEntries } = useLeadsPipeline();
   const registerAttempt = useRegisterLeadAttempt();
