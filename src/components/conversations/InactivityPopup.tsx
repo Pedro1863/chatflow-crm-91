@@ -146,15 +146,17 @@ export function InactivityPopup() {
         const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > new Date(lastMsgTime).getTime();
 
         if (pipelineAfterMsg) {
-          // There's a pipeline entry after the last message
-          // If it was saved manually → popup blocked for this attempt
+          // There's a pipeline entry after the last incoming message
+          // If it was saved manually → popup blocked
           if (state.salvoManualmente) continue;
 
-          // If popup already shown today for this cycle → skip
-          if (state.popupExibido && state.popupCicloData === todayStr) continue;
-
-          // If popup was shown on a previous day, it resets (new cycle)
-          // Allow it to show again
+          // If popup already shown for this cycle AND no new client message since → skip
+          if (state.popupExibido && state.popupCicloData) {
+            const cicloDate = new Date(state.popupCicloData + "T23:59:59").getTime();
+            const lastMsgDate = new Date(lastMsgTime).getTime();
+            // Only re-show if client sent a NEW message AFTER the last popup cycle
+            if (lastMsgDate <= cicloDate) continue;
+          }
         }
       }
 
