@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getN8nWebhookUrl, setN8nWebhookUrl } from "@/hooks/use-crm-data";
+import OrderImportCard from "./OrderImportCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -20,6 +21,9 @@ const CrmIntegrationTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Importação de pedidos */}
+      <OrderImportCard />
+
       {/* Webhook n8n - Envio de mensagens */}
       <Card className="border-primary/30">
         <CardHeader>
