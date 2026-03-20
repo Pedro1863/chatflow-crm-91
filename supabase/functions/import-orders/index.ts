@@ -43,6 +43,23 @@ function parseValue(val: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+function parseDate(val: string): string | null {
+  if (!val) return null;
+  // Try dd/mm/yyyy
+  const brMatch = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (brMatch) {
+    const [, d, m, y] = brMatch;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T12:00:00Z`;
+  }
+  // Try yyyy-mm-dd
+  const isoMatch = val.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (isoMatch) {
+    const [, y, m, d] = isoMatch;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T12:00:00Z`;
+  }
+  return null;
+}
+
 function mapRow(raw: Record<string, string>): OrderRow {
   const bling_id = raw["id"] || raw["bling_id"] || raw["id_pedido"] || raw["numero"] || "";
   const telefone = raw["telefone"] || raw["fone"] || raw["celular"] || raw["phone"] || "";
