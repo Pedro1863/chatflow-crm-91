@@ -146,11 +146,13 @@ serve(async (req) => {
         continue;
       }
 
-      // Update customer via direct update (not RPC to avoid trigger side effects)
+      // Update customer with actual order date
+      const parsedDate = order.data_pedido ? parseDate(order.data_pedido) : null;
       const { error } = await supabase.rpc("registrar_pedido", {
         _bling_id: order.bling_id || null,
         _telefone: order.telefone || null,
         _valor_pedido: order.valor_pedido,
+        _data_pedido: parsedDate || new Date().toISOString(),
       });
 
       if (error) {
