@@ -95,21 +95,45 @@ serve(async (req) => {
     const body = await req.json();
     const csvTexts: string[] = Array.isArray(body.csv_data) ? body.csv_data : [body.csv_data];
 
-    // Parse all CSVs into one list
+    // Parse all CSVs into raw rows
     const allRows: OrderRow[] = [];
     for (const csv of csvTexts) {
       const parsed = parseCSV(csv);
       allRows.push(...parsed.map(mapRow));
     }
 
+    // Group rows by order_id to avoid counting each item as a separate order
+    // Sum valor_pedido per order, keep first row's metadata
+    const orderMap = new Map<string, OrderRow>();
+    for (const row of allRows) {
+      const key = row.order_id || `nokey_${Math.random()}`;
+      if (orderMap.has(key)) {
+        const existing = orderMap.get(key)!;
+        existing.valor_pedido += row.valor_pedido;
+      } else {
+        orderMap.set(key, { ...row });
+      }
+    }
+    const groupedOrders = Array.from(orderMap.values());
+
     // Load all customers for matching
     const { data: customers } = await supabase.from("customers").select("id, bling_id, telefone, nome");
     const byBling = new Map<string, { id: string; telefone: string }>();
     const byPhone = new Map<string, { id: string; bling_id: string | null }>();
 
+    // Helper: strip phone to just digits for flexible matching
+    const stripPhone = (p: string) => p.replace(/\D/g, "");
+
     for (const c of customers || []) {
       if (c.bling_id) byBling.set(c.bling_id, { id: c.id, telefone: c.telefone });
-      if (c.telefone) byPhone.set(c.telefone, { id: c.id, bling_id: c.bling_id });
+      if (c.telefone) {
+        const digits = stripPhone(c.telefone);
+        // Index by multiple formats for flexible matching
+        byPhone.set(c.telefone, { id: c.id, bling_id: c.bling_id });
+        byPhone.set(digits, { id: c.id, bling_id: c.bling_id });
+        if (digits.length === 11) byPhone.set("+55" + digits, { id: c.id, bling_id: c.bling_id });
+        if (digits.length === 13 && digits.startsWith("55")) byPhone.set("+" + digits, { id: c.id, bling_id: c.bling_id });
+      }
     }
 
     let vinculados = 0;
@@ -118,7 +142,7 @@ serve(async (req) => {
     const inconsistencias: { order: OrderRow; motivo: string }[] = [];
     const clientesAtualizados = new Set<string>();
 
-    for (const order of allRows) {
+    for (const order of groupedOrders) {
       if (order.valor_pedido <= 0 && !order.bling_id) {
         inconsistencias.push({ order, motivo: "Pedido sem valor e sem identificador" });
         falhas++;
@@ -126,19 +150,21 @@ serve(async (req) => {
       }
 
       let matched: { id: string; telefone?: string; bling_id?: string | null } | null = null;
-      let matchMethod = "";
 
-      // Priority: bling_id
+      // Priority: bling_id (ID contato)
       if (order.bling_id && byBling.has(order.bling_id)) {
         const m = byBling.get(order.bling_id)!;
         matched = { id: m.id, telefone: m.telefone };
-        matchMethod = "bling_id";
       }
-      // Fallback: telefone
-      if (!matched && order.telefone && byPhone.has(order.telefone)) {
-        const m = byPhone.get(order.telefone)!;
-        matched = { id: m.id, bling_id: m.bling_id };
-        matchMethod = "telefone";
+      // Fallback: telefone (try multiple formats)
+      if (!matched && order.telefone) {
+        const digits = stripPhone(order.telefone);
+        const phoneLookup = byPhone.get(order.telefone) || byPhone.get(digits) ||
+          byPhone.get("+55" + digits) || (digits.startsWith("55") ? byPhone.get("+" + digits) : null) ||
+          (digits.startsWith("55") ? byPhone.get(digits.slice(2)) : null);
+        if (phoneLookup) {
+          matched = { id: phoneLookup.id, bling_id: phoneLookup.bling_id };
+        }
       }
 
       if (!matched) {
@@ -150,11 +176,13 @@ serve(async (req) => {
         continue;
       }
 
-      // Update customer with actual order date
+      // Use the matched customer's bling_id for the RPC call (more reliable)
+      const rpcBlingId = matched.bling_id || order.bling_id || null;
+      const rpcTelefone = matched.telefone || order.telefone || null;
       const parsedDate = order.data_pedido ? parseDate(order.data_pedido) : null;
       const { error } = await supabase.rpc("registrar_pedido", {
-        _bling_id: order.bling_id || null,
-        _telefone: order.telefone || null,
+        _bling_id: rpcBlingId,
+        _telefone: rpcTelefone,
         _valor_pedido: order.valor_pedido,
         _data_pedido: parsedDate || new Date().toISOString(),
       });
