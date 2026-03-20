@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useCustomers, useLeadsPipeline, useAquisicaoMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -6,8 +7,16 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import { UserPlus, TrendingUp, Percent, Loader2, Target } from "lucide-react";
+import { format } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
@@ -21,29 +30,26 @@ const AquisicaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const { data: leads = [] } = useLeadsPipeline();
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
+  const [showNovos, setShowNovos] = useState(false);
 
   const clientesComPedido = customers.filter((c) => (c.total_pedidos || 0) >= 1);
-  // Leads únicos (por telefone) para taxa de conversão de clientes
   const leadsUnicos = new Set(leads.map((l) => l.telefone)).size;
   const totalLeads = leadsUnicos + clientesComPedido.length;
   const totalCustomers = clientesComPedido.length;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
 
-  // Taxa de conversão por tentativas de venda
   const totalVendas = customers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
   const totalTentativas = leads.length + totalVendas;
   const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
 
-  // Novos clientes = data_conversao no mês atual (imutável, registrado apenas na 1ª compra)
   const now = new Date();
   const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const novosClientes = customers.filter((c) => {
+  const novosClientesList = customers.filter((c) => {
     if (!c.data_conversao) return false;
-    const conv = c.data_conversao.slice(0, 7); // "YYYY-MM"
-    return conv === mesAtual;
-  }).length;
+    return c.data_conversao.slice(0, 7) === mesAtual;
+  });
+  const novosClientes = novosClientesList.length;
 
-  // Trend: compare last two months of new clients
   const lastMonth = monthlyData.length >= 1 ? monthlyData[monthlyData.length - 1] : null;
   const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null;
   const trendNovos = lastMonth && prevMonth
@@ -70,6 +76,7 @@ const AquisicaoSection = () => {
           value={novosClientes}
           sub={`Convertidos em ${mesAtual}`}
           trend={trendNovos}
+          onClick={() => setShowNovos(true)}
         />
         <MetricCard
           icon={TrendingUp}
@@ -90,6 +97,47 @@ const AquisicaoSection = () => {
           sub={`${novosClientes} de ${totalCustomers}`}
         />
       </div>
+
+      {/* Dialog: Novos Clientes */}
+      <Dialog open={showNovos} onOpenChange={setShowNovos}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Novos Clientes — {mesAtual}</DialogTitle>
+            <DialogDescription>{novosClientes} cliente(s) convertido(s) neste mês</DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 -mx-6 px-6">
+            {novosClientesList.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">
+                Nenhum novo cliente neste mês.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {novosClientesList.map((c) => (
+                  <div
+                    key={c.id}
+                    className="flex items-center justify-between rounded-md border border-border bg-muted/30 p-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {c.nome || "Sem nome"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{c.telefone}</p>
+                    </div>
+                    <div className="text-right shrink-0 ml-3">
+                      <p className="text-sm font-semibold text-foreground">
+                        R$ {(c.valor_total_comprado || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.data_conversao ? format(new Date(c.data_conversao), "dd/MM/yyyy") : "—"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Monthly evolution chart */}
       {monthlyData.length > 0 && (
@@ -117,7 +165,6 @@ const AquisicaoSection = () => {
               </LineChart>
             </ChartContainer>
 
-            {/* Monthly variation */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
               {monthlyData.map((item, i) => {
                 const prev = i > 0 ? monthlyData[i - 1] : null;

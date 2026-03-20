@@ -8,11 +8,15 @@ interface MetricCardProps {
   sub: string;
   trend?: number;
   invertTrend?: boolean;
+  onClick?: () => void;
 }
 
-const MetricCard = ({ icon: Icon, label, value, sub, trend, invertTrend }: MetricCardProps) => {
+const MetricCard = ({ icon: Icon, label, value, sub, trend, invertTrend, onClick }: MetricCardProps) => {
   return (
-    <Card>
+    <Card
+      className={onClick ? "cursor-pointer hover:border-primary/50 transition-colors" : ""}
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm text-muted-foreground">{label}</span>
