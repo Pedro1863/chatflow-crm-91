@@ -220,18 +220,12 @@ serve(async (req) => {
     }
 
     const resumo = {
-      total_pedidos: allRows.length,
+      total_linhas_csv: allRows.length,
+      total_pedidos_agrupados: groupedOrders.length,
       vinculados,
       falhas,
       clientes_atualizados: clientesAtualizados.size,
       leads_convertidos: leadsConvertidos,
-      inconsistencias: inconsistencias.map(i => ({
-        bling_id: i.order.bling_id || null,
-        telefone: i.order.telefone || null,
-        nome: i.order.nome_cliente || null,
-        valor: i.order.valor_pedido,
-        motivo: i.motivo,
-      })),
     };
 
     return new Response(JSON.stringify(resumo), {
