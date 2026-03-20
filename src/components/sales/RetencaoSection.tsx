@@ -15,13 +15,12 @@ import {
   UserX,
   Loader2,
 } from "lucide-react";
-import { differenceInDays, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { differenceInDays } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import AlertBadge from "./AlertBadge";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
-
-type Props = { totalMeses: number; mesSelecionado: string };
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const healthColors = {
   saudavel: "hsl(var(--chart-1))",
@@ -39,17 +38,17 @@ const churnConfig: ChartConfig = {
   taxa_churn_percentual: { label: "Taxa de Churn (%)", color: "hsl(var(--chart-5))" },
 };
 
-function classifyHealth(dataUltimoPedido: string | null, refDate: Date = new Date()): "saudavel" | "em_risco" | "inativo" {
+function classifyHealth(dataUltimoPedido: string | null): "saudavel" | "em_risco" | "inativo" {
   if (!dataUltimoPedido) return "inativo";
-  const days = differenceInDays(refDate, new Date(dataUltimoPedido));
+  const days = differenceInDays(new Date(), new Date(dataUltimoPedido));
   if (days <= 15) return "saudavel";
   if (days <= 30) return "em_risco";
   return "inativo";
 }
 
-const RetencaoSection = ({ totalMeses, mesSelecionado }: Props) => {
+const RetencaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
-  const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(totalMeses);
+  const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
 
   if (loadingC || loadingChurn) {
     return (
@@ -60,28 +59,10 @@ const RetencaoSection = ({ totalMeses, mesSelecionado }: Props) => {
     );
   }
 
-  // Reference date: end of selected month or today
-  const refDate = mesSelecionado !== "todos"
-    ? endOfMonth(parseISO(`${mesSelecionado}-01`))
-    : new Date();
-
-  // Filter customers relevant to the selected period
-  const filteredCustomers = mesSelecionado === "todos"
-    ? customers
-    : customers.filter((c) => {
-        if (!c.data_ultimo_pedido && !c.data_conversao) return false;
-        const convDate = c.data_conversao ? new Date(c.data_conversao) : null;
-        const lastOrder = c.data_ultimo_pedido ? new Date(c.data_ultimo_pedido) : null;
-        const mesStart = startOfMonth(parseISO(`${mesSelecionado}-01`));
-        const mesEnd = endOfMonth(parseISO(`${mesSelecionado}-01`));
-        // Include if converted before end of month or had activity in/before month
-        return (convDate && convDate <= mesEnd) || (lastOrder && lastOrder <= mesEnd);
-      });
-
-  const totalCustomers = filteredCustomers.length;
+  const totalCustomers = customers.length;
   const healthMap = { saudavel: 0, em_risco: 0, inativo: 0 };
-  filteredCustomers.forEach((c) => {
-    healthMap[classifyHealth(c.data_ultimo_pedido, refDate)]++;
+  customers.forEach((c) => {
+    healthMap[classifyHealth(c.data_ultimo_pedido)]++;
   });
 
   const healthData = [
@@ -92,12 +73,14 @@ const RetencaoSection = ({ totalMeses, mesSelecionado }: Props) => {
 
   const pctEmRisco = totalCustomers > 0 ? (healthMap.em_risco / totalCustomers) * 100 : 0;
 
+  // Churn trend
   const lastChurn = churnData.length >= 1 ? churnData[churnData.length - 1] : null;
   const prevChurn = churnData.length >= 2 ? churnData[churnData.length - 2] : null;
   const churnTrend = lastChurn && prevChurn
     ? getVariation(lastChurn.taxa_churn_percentual, prevChurn.taxa_churn_percentual)
     : undefined;
 
+  // Alerts
   const churnIncreasing = churnTrend !== undefined && churnTrend > 10;
   const riscoAlto = pctEmRisco > 20;
 
@@ -111,9 +94,24 @@ const RetencaoSection = ({ totalMeses, mesSelecionado }: Props) => {
       </SectionHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <MetricCard icon={HeartPulse} label="Clientes Ativos" value={healthMap.saudavel} sub="Pedido nos últimos 15 dias" />
-        <MetricCard icon={AlertTriangle} label="Em Risco" value={healthMap.em_risco} sub={`${pctEmRisco.toFixed(1)}% da base`} />
-        <MetricCard icon={UserX} label="Inativos / Churn" value={healthMap.inativo} sub="> 30 dias sem pedido" />
+        <MetricCard
+          icon={HeartPulse}
+          label="Clientes Ativos"
+          value={healthMap.saudavel}
+          sub="Pedido nos últimos 15 dias"
+        />
+        <MetricCard
+          icon={AlertTriangle}
+          label="Em Risco"
+          value={healthMap.em_risco}
+          sub={`${pctEmRisco.toFixed(1)}% da base`}
+        />
+        <MetricCard
+          icon={UserX}
+          label="Inativos / Churn"
+          value={healthMap.inativo}
+          sub="> 30 dias sem pedido"
+        />
         <MetricCard
           icon={ShieldCheck}
           label="Churn Atual"
@@ -125,6 +123,7 @@ const RetencaoSection = ({ totalMeses, mesSelecionado }: Props) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Health pie chart */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -136,7 +135,16 @@ const RetencaoSection = ({ totalMeses, mesSelecionado }: Props) => {
               <ChartContainer config={healthConfig} className="aspect-square max-h-[200px]">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Pie data={healthData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={75} strokeWidth={2} />
+                  <Pie
+                    data={healthData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={75}
+                    strokeWidth={2}
+                  />
                 </PieChart>
               </ChartContainer>
               <div className="space-y-3">
@@ -148,6 +156,7 @@ const RetencaoSection = ({ totalMeses, mesSelecionado }: Props) => {
           </CardContent>
         </Card>
 
+        {/* Churn evolution */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">

@@ -1,10 +1,6 @@
-import { useState } from "react";
-import { Loader2, Calendar } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useCustomers, useLeadsPipeline } from "@/hooks/use-sales-data";
-import { useDataInicioMetricas } from "@/hooks/use-data-inicio";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { gerarListaMeses, formatMesLabel, mesesDesde } from "@/lib/dashboard-utils";
 import AquisicaoSection from "@/components/sales/AquisicaoSection";
 import RetencaoSection from "@/components/sales/RetencaoSection";
 import ReceitaSection from "@/components/sales/ReceitaSection";
@@ -14,8 +10,6 @@ import PipelinePerdas from "@/components/sales/PipelinePerdas";
 const SalesDashboardPage = () => {
   const { isLoading: loadingC } = useCustomers();
   const { isLoading: loadingL } = useLeadsPipeline();
-  const dataInicio = useDataInicioMetricas();
-  const [mesSelecionado, setMesSelecionado] = useState<string>("todos");
 
   if (loadingC || loadingL) {
     return (
@@ -26,39 +20,31 @@ const SalesDashboardPage = () => {
     );
   }
 
-  const meses = gerarListaMeses(dataInicio);
-  const totalMeses = mesesDesde(dataInicio);
-
   return (
     <div className="h-full p-6 overflow-y-auto scrollbar-thin space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Métricas de Vendas</h1>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Select value={mesSelecionado} onValueChange={setMesSelecionado}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos os meses</SelectItem>
-              {meses.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {formatMesLabel(m)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <h1 className="text-xl font-bold text-foreground">Métricas de Vendas</h1>
 
-      <AquisicaoSection totalMeses={totalMeses} mesSelecionado={mesSelecionado} />
+      {/* Bloco 1: Aquisição */}
+      <AquisicaoSection />
+
       <Separator />
-      <RetencaoSection totalMeses={totalMeses} mesSelecionado={mesSelecionado} />
+
+      {/* Bloco 2: Retenção */}
+      <RetencaoSection />
+
       <Separator />
-      <ReceitaSection totalMeses={totalMeses} mesSelecionado={mesSelecionado} />
+
+      {/* Bloco 3: Receita */}
+      <ReceitaSection />
+
       <Separator />
-      <ComportamentoSection totalMeses={totalMeses} mesSelecionado={mesSelecionado} />
+
+      {/* Bloco 4: Comportamento */}
+      <ComportamentoSection />
+
       <Separator />
+
+      {/* Pipeline de perdas */}
       <PipelinePerdas />
     </div>
   );

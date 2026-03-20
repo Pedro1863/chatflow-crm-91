@@ -8,7 +8,6 @@ const corsHeaders = {
 
 interface OrderRow {
   bling_id?: string;
-  order_id?: string;
   telefone?: string;
   valor_pedido: number;
   data_pedido?: string;
@@ -44,35 +43,15 @@ function parseValue(val: string): number {
   return isNaN(num) ? 0 : num;
 }
 
-function parseDate(val: string): string | null {
-  if (!val) return null;
-  // Try dd/mm/yyyy
-  const brMatch = val.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (brMatch) {
-    const [, d, m, y] = brMatch;
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T12:00:00Z`;
-  }
-  // Try yyyy-mm-dd
-  const isoMatch = val.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-  if (isoMatch) {
-    const [, y, m, d] = isoMatch;
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T12:00:00Z`;
-  }
-  return null;
-}
-
 function mapRow(raw: Record<string, string>): OrderRow {
-  // "id contato" is the Bling CUSTOMER ID; "id" is the ORDER ID
-  const bling_contact_id = raw["id contato"] || raw["id_contato"] || raw["bling_id"] || raw["codigo do contato"] || "";
-  const order_id = raw["n° do pedido"] || raw["numero"] || raw["id_pedido"] || raw["id"] || "";
+  const bling_id = raw["id"] || raw["bling_id"] || raw["id_pedido"] || raw["numero"] || "";
   const telefone = raw["telefone"] || raw["fone"] || raw["celular"] || raw["phone"] || "";
-  const valor = raw["preço total"] || raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || "0";
+  const valor = raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || "0";
   const data = raw["data"] || raw["data_pedido"] || raw["date"] || "";
-  const nome = raw["nome do contato"] || raw["nome"] || raw["cliente"] || raw["nome_cliente"] || "";
+  const nome = raw["nome"] || raw["cliente"] || raw["nome_cliente"] || "";
 
   return {
-    bling_id: bling_contact_id || undefined,
-    order_id: order_id || undefined,
+    bling_id: bling_id || undefined,
     telefone: telefone ? normalizePhone(telefone) : undefined,
     valor_pedido: parseValue(valor),
     data_pedido: data || undefined,
@@ -95,45 +74,21 @@ serve(async (req) => {
     const body = await req.json();
     const csvTexts: string[] = Array.isArray(body.csv_data) ? body.csv_data : [body.csv_data];
 
-    // Parse all CSVs into raw rows
+    // Parse all CSVs into one list
     const allRows: OrderRow[] = [];
     for (const csv of csvTexts) {
       const parsed = parseCSV(csv);
       allRows.push(...parsed.map(mapRow));
     }
 
-    // Group rows by order_id to avoid counting each item as a separate order
-    // Sum valor_pedido per order, keep first row's metadata
-    const orderMap = new Map<string, OrderRow>();
-    for (const row of allRows) {
-      const key = row.order_id || `nokey_${Math.random()}`;
-      if (orderMap.has(key)) {
-        const existing = orderMap.get(key)!;
-        existing.valor_pedido += row.valor_pedido;
-      } else {
-        orderMap.set(key, { ...row });
-      }
-    }
-    const groupedOrders = Array.from(orderMap.values());
-
     // Load all customers for matching
     const { data: customers } = await supabase.from("customers").select("id, bling_id, telefone, nome");
     const byBling = new Map<string, { id: string; telefone: string }>();
     const byPhone = new Map<string, { id: string; bling_id: string | null }>();
 
-    // Helper: strip phone to just digits for flexible matching
-    const stripPhone = (p: string) => p.replace(/\D/g, "");
-
     for (const c of customers || []) {
       if (c.bling_id) byBling.set(c.bling_id, { id: c.id, telefone: c.telefone });
-      if (c.telefone) {
-        const digits = stripPhone(c.telefone);
-        // Index by multiple formats for flexible matching
-        byPhone.set(c.telefone, { id: c.id, bling_id: c.bling_id });
-        byPhone.set(digits, { id: c.id, bling_id: c.bling_id });
-        if (digits.length === 11) byPhone.set("+55" + digits, { id: c.id, bling_id: c.bling_id });
-        if (digits.length === 13 && digits.startsWith("55")) byPhone.set("+" + digits, { id: c.id, bling_id: c.bling_id });
-      }
+      if (c.telefone) byPhone.set(c.telefone, { id: c.id, bling_id: c.bling_id });
     }
 
     let vinculados = 0;
@@ -142,7 +97,7 @@ serve(async (req) => {
     const inconsistencias: { order: OrderRow; motivo: string }[] = [];
     const clientesAtualizados = new Set<string>();
 
-    for (const order of groupedOrders) {
+    for (const order of allRows) {
       if (order.valor_pedido <= 0 && !order.bling_id) {
         inconsistencias.push({ order, motivo: "Pedido sem valor e sem identificador" });
         falhas++;
@@ -150,21 +105,19 @@ serve(async (req) => {
       }
 
       let matched: { id: string; telefone?: string; bling_id?: string | null } | null = null;
+      let matchMethod = "";
 
-      // Priority: bling_id (ID contato)
+      // Priority: bling_id
       if (order.bling_id && byBling.has(order.bling_id)) {
         const m = byBling.get(order.bling_id)!;
         matched = { id: m.id, telefone: m.telefone };
+        matchMethod = "bling_id";
       }
-      // Fallback: telefone (try multiple formats)
-      if (!matched && order.telefone) {
-        const digits = stripPhone(order.telefone);
-        const phoneLookup = byPhone.get(order.telefone) || byPhone.get(digits) ||
-          byPhone.get("+55" + digits) || (digits.startsWith("55") ? byPhone.get("+" + digits) : null) ||
-          (digits.startsWith("55") ? byPhone.get(digits.slice(2)) : null);
-        if (phoneLookup) {
-          matched = { id: phoneLookup.id, bling_id: phoneLookup.bling_id };
-        }
+      // Fallback: telefone
+      if (!matched && order.telefone && byPhone.has(order.telefone)) {
+        const m = byPhone.get(order.telefone)!;
+        matched = { id: m.id, bling_id: m.bling_id };
+        matchMethod = "telefone";
       }
 
       if (!matched) {
@@ -176,15 +129,11 @@ serve(async (req) => {
         continue;
       }
 
-      // Use the matched customer's bling_id for the RPC call (more reliable)
-      const rpcBlingId = matched.bling_id || order.bling_id || null;
-      const rpcTelefone = matched.telefone || order.telefone || null;
-      const parsedDate = order.data_pedido ? parseDate(order.data_pedido) : null;
+      // Update customer via direct update (not RPC to avoid trigger side effects)
       const { error } = await supabase.rpc("registrar_pedido", {
-        _bling_id: rpcBlingId,
-        _telefone: rpcTelefone,
+        _bling_id: order.bling_id || null,
+        _telefone: order.telefone || null,
         _valor_pedido: order.valor_pedido,
-        _data_pedido: parsedDate || new Date().toISOString(),
       });
 
       if (error) {
@@ -220,12 +169,18 @@ serve(async (req) => {
     }
 
     const resumo = {
-      total_linhas_csv: allRows.length,
-      total_pedidos_agrupados: groupedOrders.length,
+      total_pedidos: allRows.length,
       vinculados,
       falhas,
       clientes_atualizados: clientesAtualizados.size,
       leads_convertidos: leadsConvertidos,
+      inconsistencias: inconsistencias.map(i => ({
+        bling_id: i.order.bling_id || null,
+        telefone: i.order.telefone || null,
+        nome: i.order.nome_cliente || null,
+        valor: i.order.valor_pedido,
+        motivo: i.motivo,
+      })),
     };
 
     return new Response(JSON.stringify(resumo), {

@@ -416,33 +416,6 @@ export type Database = {
             }
           }
         | {
-            Args: {
-              _bling_id?: string
-              _data_pedido?: string
-              _telefone?: string
-              _valor_pedido?: number
-            }
-            Returns: {
-              bling_id: string | null
-              data_conversao: string | null
-              data_primeiro_contato: string | null
-              data_ultimo_pedido: string | null
-              id: string
-              nome: string | null
-              origem_lead: string | null
-              status_cliente: string | null
-              telefone: string
-              total_pedidos: number | null
-              valor_total_comprado: number | null
-            }[]
-            SetofOptions: {
-              from: "*"
-              to: "customers"
-              isOneToOne: false
-              isSetofReturn: true
-            }
-          }
-        | {
             Args: { _telefone: string; _valor_pedido?: number }
             Returns: {
               bling_id: string | null

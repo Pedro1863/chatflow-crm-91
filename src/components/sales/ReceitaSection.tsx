@@ -11,17 +11,16 @@ import { DollarSign, Receipt, Loader2 } from "lucide-react";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
-
-type Props = { totalMeses: number; mesSelecionado: string };
+import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const receitaConfig: ChartConfig = {
   receita_novos: { label: "Novos", color: "hsl(var(--chart-2))" },
   receita_recorrentes: { label: "Recorrentes", color: "hsl(var(--chart-1))" },
 };
 
-const ReceitaSection = ({ totalMeses, mesSelecionado }: Props) => {
+const ReceitaSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
-  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(totalMeses);
+  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
 
   if (loadingC || loadingM) {
     return (
@@ -32,19 +31,14 @@ const ReceitaSection = ({ totalMeses, mesSelecionado }: Props) => {
     );
   }
 
-  // Filter by month if selected
-  const filteredCustomers = mesSelecionado === "todos" ? customers : customers.filter((c) => {
-    if (!c.data_conversao) return false;
-    return c.data_conversao.startsWith(mesSelecionado);
-  });
-
-  const receitaTotal = filteredCustomers.reduce((sum, c) => sum + (c.valor_total_comprado || 0), 0);
-  const totalPedidos = filteredCustomers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
+  const receitaTotal = customers.reduce((sum, c) => sum + (c.valor_total_comprado || 0), 0);
+  const totalPedidos = customers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
   const ticketMedio = totalPedidos > 0 ? receitaTotal / totalPedidos : 0;
 
-  const receitaNovos = filteredCustomers.filter(c => c.total_pedidos === 1).reduce((s, c) => s + (c.valor_total_comprado || 0), 0);
-  const receitaRecorrentes = filteredCustomers.filter(c => (c.total_pedidos || 0) > 1).reduce((s, c) => s + (c.valor_total_comprado || 0), 0);
+  const receitaNovos = customers.filter(c => c.total_pedidos === 1).reduce((s, c) => s + (c.valor_total_comprado || 0), 0);
+  const receitaRecorrentes = customers.filter(c => c.total_pedidos > 1).reduce((s, c) => s + (c.valor_total_comprado || 0), 0);
 
+  // Monthly revenue trend
   const lastM = monthlyData.length >= 1 ? monthlyData[monthlyData.length - 1] : null;
   const prevM = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null;
   const receitaLastMonth = lastM ? lastM.receita_novos + lastM.receita_recorrentes : 0;
@@ -64,13 +58,30 @@ const ReceitaSection = ({ totalMeses, mesSelecionado }: Props) => {
       <SectionHeader icon={DollarSign} title="Receita" />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <MetricCard icon={DollarSign} label="Receita Total" value={formatCurrency(receitaTotal)} sub="Acumulado de todos os clientes" trend={receitaTrend} />
-        <MetricCard icon={Receipt} label="Ticket Médio" value={formatCurrency(ticketMedio)} sub={`${totalPedidos} pedidos totais`} />
-        <MetricCard icon={DollarSign} label="Receita Recorrentes" value={formatCurrency(receitaRecorrentes)} sub={`Novos: ${formatCurrency(receitaNovos)}`} />
+        <MetricCard
+          icon={DollarSign}
+          label="Receita Total"
+          value={formatCurrency(receitaTotal)}
+          sub="Acumulado de todos os clientes"
+          trend={receitaTrend}
+        />
+        <MetricCard
+          icon={Receipt}
+          label="Ticket Médio"
+          value={formatCurrency(ticketMedio)}
+          sub={`${totalPedidos} pedidos totais`}
+        />
+        <MetricCard
+          icon={DollarSign}
+          label="Receita Recorrentes"
+          value={formatCurrency(receitaRecorrentes)}
+          sub={`Novos: ${formatCurrency(receitaNovos)}`}
+        />
       </div>
 
       {chartData.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Revenue evolution */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -91,6 +102,7 @@ const ReceitaSection = ({ totalMeses, mesSelecionado }: Props) => {
             </CardContent>
           </Card>
 
+          {/* Growth trend */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
