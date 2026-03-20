@@ -62,14 +62,17 @@ function parseDate(val: string): string | null {
 }
 
 function mapRow(raw: Record<string, string>): OrderRow {
-  const bling_id = raw["id"] || raw["bling_id"] || raw["id_pedido"] || raw["numero"] || "";
+  // "id contato" is the Bling CUSTOMER ID; "id" is the ORDER ID
+  const bling_contact_id = raw["id contato"] || raw["id_contato"] || raw["bling_id"] || raw["codigo do contato"] || "";
+  const order_id = raw["n° do pedido"] || raw["numero"] || raw["id_pedido"] || raw["id"] || "";
   const telefone = raw["telefone"] || raw["fone"] || raw["celular"] || raw["phone"] || "";
-  const valor = raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || "0";
+  const valor = raw["preço total"] || raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || "0";
   const data = raw["data"] || raw["data_pedido"] || raw["date"] || "";
-  const nome = raw["nome"] || raw["cliente"] || raw["nome_cliente"] || "";
+  const nome = raw["nome do contato"] || raw["nome"] || raw["cliente"] || raw["nome_cliente"] || "";
 
   return {
-    bling_id: bling_id || undefined,
+    bling_id: bling_contact_id || undefined,
+    order_id: order_id || undefined,
     telefone: telefone ? normalizePhone(telefone) : undefined,
     valor_pedido: parseValue(valor),
     data_pedido: data || undefined,
