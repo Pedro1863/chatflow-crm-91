@@ -11,31 +11,40 @@ import { UserPlus, TrendingUp, Percent, Loader2, Target } from "lucide-react";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
-import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
+
+type Props = { totalMeses: number; mesSelecionado: string };
 
 const aquisicaoConfig: ChartConfig = {
   novos_clientes: { label: "Novos Clientes", color: "hsl(var(--chart-2))" },
 };
 
-const AquisicaoSection = () => {
+const AquisicaoSection = ({ totalMeses, mesSelecionado }: Props) => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const { data: leads = [] } = useLeadsPipeline();
-  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
+  const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(totalMeses);
 
-  const clientesComPedido = customers.filter((c) => (c.total_pedidos || 0) >= 1);
-  // Leads únicos (por telefone) para taxa de conversão de clientes
-  const leadsUnicos = new Set(leads.map((l) => l.telefone)).size;
+  // Filter by selected month if applicable
+  const filteredCustomers = mesSelecionado === "todos" ? customers : customers.filter((c) => {
+    if (!c.data_conversao) return false;
+    return c.data_conversao.startsWith(mesSelecionado);
+  });
+
+  const filteredLeads = mesSelecionado === "todos" ? leads : leads.filter((l) => {
+    if (!l.data_entrada) return false;
+    return l.data_entrada.startsWith(mesSelecionado);
+  });
+
+  const clientesComPedido = filteredCustomers.filter((c) => (c.total_pedidos || 0) >= 1);
+  const leadsUnicos = new Set(filteredLeads.map((l) => l.telefone)).size;
   const totalLeads = leadsUnicos + clientesComPedido.length;
   const totalCustomers = clientesComPedido.length;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
 
-  // Taxa de conversão por tentativas de venda
-  const totalVendas = customers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
-  const totalTentativas = leads.length + totalVendas;
+  const totalVendas = filteredCustomers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
+  const totalTentativas = filteredLeads.length + totalVendas;
   const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
-  const novosClientes = customers.filter((c) => c.total_pedidos === 1).length;
+  const novosClientes = filteredCustomers.filter((c) => c.total_pedidos === 1).length;
 
-  // Trend: compare last two months of new clients
   const lastMonth = monthlyData.length >= 1 ? monthlyData[monthlyData.length - 1] : null;
   const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null;
   const trendNovos = lastMonth && prevMonth
@@ -83,7 +92,6 @@ const AquisicaoSection = () => {
         />
       </div>
 
-      {/* Monthly evolution chart */}
       {monthlyData.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
@@ -109,7 +117,6 @@ const AquisicaoSection = () => {
               </LineChart>
             </ChartContainer>
 
-            {/* Monthly variation */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-4">
               {monthlyData.map((item, i) => {
                 const prev = i > 0 ? monthlyData[i - 1] : null;
