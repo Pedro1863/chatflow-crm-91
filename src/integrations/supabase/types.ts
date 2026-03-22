@@ -333,6 +333,44 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          bling_id_pedido: string | null
+          created_at: string
+          customer_id: string
+          data_pedido: string
+          id: string
+          id_pedido: string | null
+          valor: number
+        }
+        Insert: {
+          bling_id_pedido?: string | null
+          created_at?: string
+          customer_id: string
+          data_pedido?: string
+          id?: string
+          id_pedido?: string | null
+          valor?: number
+        }
+        Update: {
+          bling_id_pedido?: string | null
+          created_at?: string
+          customer_id?: string
+          data_pedido?: string
+          id?: string
+          id_pedido?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_events: {
         Row: {
           changed_at: string
