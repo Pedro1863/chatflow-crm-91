@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useCustomers, useChurnMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -15,11 +16,12 @@ import {
   UserX,
   Loader2,
 } from "lucide-react";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import AlertBadge from "./AlertBadge";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
+import DateFilter, { type DateRange } from "./DateFilter";
 import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
 
 const healthColors = {
@@ -46,9 +48,15 @@ function classifyHealth(dataUltimoPedido: string | null): "saudavel" | "em_risco
   return "inativo";
 }
 
+function defaultRange(): DateRange {
+  const now = new Date();
+  return { from: startOfMonth(now), to: endOfMonth(now) };
+}
+
 const RetencaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
+  const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
   if (loadingC || loadingChurn) {
     return (
@@ -59,6 +67,16 @@ const RetencaoSection = () => {
     );
   }
 
+  // Filter customers that had activity in the selected period
+  const filteredCustomers = customers.filter((c) => {
+    if (!c.data_ultimo_pedido && !c.data_conversao) return false;
+    const refDate = c.data_ultimo_pedido || c.data_conversao;
+    if (!refDate) return false;
+    const d = new Date(refDate);
+    return d >= dateRange.from && d <= dateRange.to;
+  });
+
+  // Health is always based on current state (recency from today)
   const totalCustomers = customers.length;
   const healthMap = { saudavel: 0, em_risco: 0, inativo: 0 };
   customers.forEach((c) => {
@@ -73,78 +91,43 @@ const RetencaoSection = () => {
 
   const pctEmRisco = totalCustomers > 0 ? (healthMap.em_risco / totalCustomers) * 100 : 0;
 
-  // Churn trend
   const lastChurn = churnData.length >= 1 ? churnData[churnData.length - 1] : null;
   const prevChurn = churnData.length >= 2 ? churnData[churnData.length - 2] : null;
   const churnTrend = lastChurn && prevChurn
     ? getVariation(lastChurn.taxa_churn_percentual, prevChurn.taxa_churn_percentual)
     : undefined;
 
-  // Alerts
   const churnIncreasing = churnTrend !== undefined && churnTrend > 10;
   const riscoAlto = pctEmRisco > 20;
 
   return (
     <div className="space-y-4">
       <SectionHeader icon={ShieldCheck} title="Retenção">
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {churnIncreasing && <AlertBadge level="danger" message="Churn em alta" />}
           {riscoAlto && <AlertBadge level="warning" message="Muitos clientes em risco" />}
+          <DateFilter value={dateRange} onChange={setDateRange} />
         </div>
       </SectionHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <MetricCard
-          icon={HeartPulse}
-          label="Clientes Ativos"
-          value={healthMap.saudavel}
-          sub="Pedido nos últimos 15 dias"
-        />
-        <MetricCard
-          icon={AlertTriangle}
-          label="Em Risco"
-          value={healthMap.em_risco}
-          sub={`${pctEmRisco.toFixed(1)}% da base`}
-        />
-        <MetricCard
-          icon={UserX}
-          label="Inativos / Churn"
-          value={healthMap.inativo}
-          sub="> 30 dias sem pedido"
-        />
-        <MetricCard
-          icon={ShieldCheck}
-          label="Churn Atual"
-          value={lastChurn ? `${lastChurn.taxa_churn_percentual}%` : "—"}
-          sub={lastChurn ? lastChurn.mes : ""}
-          trend={churnTrend}
-          invertTrend
-        />
+        <MetricCard icon={HeartPulse} label="Clientes Ativos" value={healthMap.saudavel} sub="Pedido nos últimos 15 dias" />
+        <MetricCard icon={AlertTriangle} label="Em Risco" value={healthMap.em_risco} sub={`${pctEmRisco.toFixed(1)}% da base`} />
+        <MetricCard icon={UserX} label="Inativos / Churn" value={healthMap.inativo} sub="> 30 dias sem pedido" />
+        <MetricCard icon={ShieldCheck} label="Churn Atual" value={lastChurn ? `${lastChurn.taxa_churn_percentual}%` : "—"} sub={lastChurn ? lastChurn.mes : ""} trend={churnTrend} invertTrend />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Health pie chart */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Saúde da Base
-            </CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Saúde da Base</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
               <ChartContainer config={healthConfig} className="aspect-square max-h-[200px]">
                 <PieChart>
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Pie
-                    data={healthData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={75}
-                    strokeWidth={2}
-                  />
+                  <Pie data={healthData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={75} strokeWidth={2} />
                 </PieChart>
               </ChartContainer>
               <div className="space-y-3">
@@ -156,12 +139,9 @@ const RetencaoSection = () => {
           </CardContent>
         </Card>
 
-        {/* Churn evolution */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Evolução do Churn
-            </CardTitle>
+            <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Evolução do Churn</CardTitle>
           </CardHeader>
           <CardContent>
             {churnData.length === 0 ? (
