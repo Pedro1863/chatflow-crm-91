@@ -15,7 +15,8 @@ type Inconsistencia = {
 };
 
 type ImportResult = {
-  total_pedidos: number;
+  total_linhas_csv: number;
+  total_pedidos_unicos: number;
   vinculados: number;
   falhas: number;
   clientes_atualizados: number;
