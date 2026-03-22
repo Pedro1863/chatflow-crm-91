@@ -20,17 +20,32 @@ import { format } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import TrendIndicator, { getVariation } from "./TrendIndicator";
+import DateFilter, { type DateRange } from "./DateFilter";
 import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 const aquisicaoConfig: ChartConfig = {
   novos_clientes: { label: "Novos Clientes", color: "hsl(var(--chart-2))" },
 };
+
+function defaultRange(): DateRange {
+  const now = new Date();
+  return { from: startOfMonth(now), to: endOfMonth(now) };
+}
 
 const AquisicaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const { data: leads = [] } = useLeadsPipeline();
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
   const [showNovos, setShowNovos] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
+
+  // Filter customers by date range using data_conversao
+  const filteredCustomers = customers.filter((c) => {
+    if (!c.data_conversao) return false;
+    const d = new Date(c.data_conversao);
+    return d >= dateRange.from && d <= dateRange.to;
+  });
 
   const clientesComPedido = customers.filter((c) => (c.total_pedidos || 0) >= 1);
   const leadsUnicos = new Set(leads.map((l) => l.telefone)).size;
@@ -42,13 +57,7 @@ const AquisicaoSection = () => {
   const totalTentativas = leads.length + totalVendas;
   const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
 
-  const now = new Date();
-  const mesAtual = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const novosClientesList = customers.filter((c) => {
-    if (!c.data_conversao) return false;
-    return c.data_conversao.slice(0, 7) === mesAtual;
-  });
-  const novosClientes = novosClientesList.length;
+  const novosClientes = filteredCustomers.length;
 
   const lastMonth = monthlyData.length >= 1 ? monthlyData[monthlyData.length - 1] : null;
   const prevMonth = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null;
@@ -65,16 +74,20 @@ const AquisicaoSection = () => {
     );
   }
 
+  const rangeLabel = `${format(dateRange.from, "dd/MM")} - ${format(dateRange.to, "dd/MM")}`;
+
   return (
     <div className="space-y-4">
-      <SectionHeader icon={UserPlus} title="Aquisição" />
+      <SectionHeader icon={UserPlus} title="Aquisição">
+        <DateFilter value={dateRange} onChange={setDateRange} />
+      </SectionHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           icon={UserPlus}
           label="Novos Clientes"
           value={novosClientes}
-          sub={`Convertidos em ${mesAtual}`}
+          sub={`Convertidos no período`}
           trend={trendNovos}
           onClick={() => setShowNovos(true)}
         />
@@ -102,17 +115,17 @@ const AquisicaoSection = () => {
       <Dialog open={showNovos} onOpenChange={setShowNovos}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Novos Clientes — {mesAtual}</DialogTitle>
-            <DialogDescription>{novosClientes} cliente(s) convertido(s) neste mês</DialogDescription>
+            <DialogTitle>Novos Clientes — {rangeLabel}</DialogTitle>
+            <DialogDescription>{novosClientes} cliente(s) convertido(s) no período</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 -mx-6 px-6">
-            {novosClientesList.length === 0 ? (
+            {filteredCustomers.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">
-                Nenhum novo cliente neste mês.
+                Nenhum novo cliente neste período.
               </p>
             ) : (
               <div className="space-y-2">
-                {novosClientesList.map((c) => (
+                {filteredCustomers.map((c) => (
                   <div
                     key={c.id}
                     className="flex items-center justify-between rounded-md border border-border bg-muted/30 p-3"

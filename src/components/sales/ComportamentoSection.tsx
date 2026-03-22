@@ -1,17 +1,25 @@
+import { useState } from "react";
 import { useCustomers, useChurnMensal, useAquisicaoMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RefreshCw, Clock, Activity, TrendingUp, Loader2 } from "lucide-react";
-import { differenceInDays } from "date-fns";
+import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
 import AlertBadge from "./AlertBadge";
+import DateFilter, { type DateRange } from "./DateFilter";
 import { mesesDesdeMarco2026 } from "@/lib/dashboard-utils";
+
+function defaultRange(): DateRange {
+  const now = new Date();
+  return { from: startOfMonth(now), to: endOfMonth(now) };
+}
 
 const ComportamentoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const meses = mesesDesdeMarco2026();
   const { data: churnData = [] } = useChurnMensal(meses);
   const { data: aquisicaoData = [] } = useAquisicaoMensal(meses);
+  const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
   if (loadingC) {
     return (
@@ -22,15 +30,20 @@ const ComportamentoSection = () => {
     );
   }
 
-  const totalCustomers = customers.length;
-  const clientesRecompra = customers.filter((c) => c.total_pedidos > 1);
-  const taxaRecompra = totalCustomers > 0 ? (clientesRecompra.length / totalCustomers) * 100 : 0;
+  // Filter customers with activity in selected period
+  const filteredCustomers = customers.filter((c) => {
+    if (!c.data_ultimo_pedido) return false;
+    const d = new Date(c.data_ultimo_pedido);
+    return d >= dateRange.from && d <= dateRange.to;
+  });
 
-  // Frequência de compra (avg pedidos por cliente)
-  const totalPedidos = customers.reduce((s, c) => s + (c.total_pedidos || 0), 0);
-  const freqMedia = totalCustomers > 0 ? totalPedidos / totalCustomers : 0;
+  const totalFiltered = filteredCustomers.length;
+  const clientesRecompra = filteredCustomers.filter((c) => (c.total_pedidos || 0) > 1);
+  const taxaRecompra = totalFiltered > 0 ? (clientesRecompra.length / totalFiltered) * 100 : 0;
 
-  // Tempo médio entre compras (only for recompra clients)
+  const totalPedidos = filteredCustomers.reduce((s, c) => s + (c.total_pedidos || 0), 0);
+  const freqMedia = totalFiltered > 0 ? totalPedidos / totalFiltered : 0;
+
   const temposMedios = clientesRecompra
     .filter((c) => c.data_conversao && c.data_ultimo_pedido)
     .map((c) => {
@@ -44,29 +57,28 @@ const ComportamentoSection = () => {
     ? temposMedios.reduce((a, b) => a + b, 0) / temposMedios.length
     : 0;
 
-  // Crescimento líquido (novos - churn do último mês)
   const lastAq = aquisicaoData.length >= 1 ? aquisicaoData[aquisicaoData.length - 1] : null;
   const lastChurn = churnData.length >= 1 ? churnData[churnData.length - 1] : null;
   const novosUltimoMes = lastAq?.novos_clientes ?? 0;
   const churnadosUltimoMes = lastChurn?.total_clientes_churnados_no_mes ?? 0;
   const crescimentoLiquido = novosUltimoMes - churnadosUltimoMes;
 
-  // Alertas
   const clientesEntrandoEmRisco = customers.filter((c) => {
     if (!c.data_ultimo_pedido) return false;
     const days = differenceInDays(new Date(), new Date(c.data_ultimo_pedido));
-    return days >= 13 && days <= 17; // Approaching 15-day risk boundary
+    return days >= 13 && days <= 17;
   });
-  const freqEmQueda = freqMedia < 1.5 && totalCustomers > 5;
+  const freqEmQueda = freqMedia < 1.5 && totalFiltered > 5;
 
   return (
     <div className="space-y-4">
       <SectionHeader icon={Activity} title="Comportamento">
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {clientesEntrandoEmRisco.length > 3 && (
             <AlertBadge level="warning" message={`${clientesEntrandoEmRisco.length} entrando em risco`} />
           )}
           {freqEmQueda && <AlertBadge level="warning" message="Frequência baixa" />}
+          <DateFilter value={dateRange} onChange={setDateRange} />
         </div>
       </SectionHeader>
 
@@ -75,7 +87,7 @@ const ComportamentoSection = () => {
           icon={RefreshCw}
           label="Taxa de Recompra"
           value={`${taxaRecompra.toFixed(1)}%`}
-          sub={`${clientesRecompra.length} de ${totalCustomers}`}
+          sub={`${clientesRecompra.length} de ${totalFiltered}`}
         />
         <MetricCard
           icon={Activity}
@@ -97,7 +109,6 @@ const ComportamentoSection = () => {
         />
       </div>
 
-      {/* Clients entering risk zone */}
       {clientesEntrandoEmRisco.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
