@@ -7,12 +7,12 @@ const corsHeaders = {
 };
 
 interface OrderRow {
+  id_pedido?: string;
   bling_id?: string;
   telefone?: string;
   valor_pedido: number;
   data_pedido?: string;
   nome_cliente?: string;
-  id_pedido?: string;
   raw: Record<string, string>;
 }
 
@@ -26,7 +26,6 @@ interface GroupedOrder {
 }
 
 function parseCSV(text: string): Record<string, string>[] {
-  // Remove BOM character if present
   const clean = text.replace(/^\uFEFF/, "").trim();
   const lines = clean.split("\n");
   if (lines.length < 2) return [];
@@ -56,11 +55,8 @@ function parseValue(val: string): number {
 }
 
 function parseDateBR(dateStr: string): string {
-  // Handle DD/MM/YYYY format
   const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  if (match) {
-    return `${match[3]}-${match[2]}-${match[1]}`;
-  }
+  if (match) return `${match[3]}-${match[2]}-${match[1]}`;
   return dateStr;
 }
 
@@ -99,7 +95,6 @@ function groupByOrderId(rows: OrderRow[]): GroupedOrder[] {
 
   const result: GroupedOrder[] = [];
 
-  // Grouped orders: sum values, use first row for metadata
   for (const [id_pedido, orderRows] of groups) {
     const first = orderRows[0];
     const valor_total = orderRows.reduce((sum, r) => sum + r.valor_pedido, 0);
@@ -113,7 +108,6 @@ function groupByOrderId(rows: OrderRow[]): GroupedOrder[] {
     });
   }
 
-  // Rows without id_pedido: treat each as individual order
   for (const row of noId) {
     result.push({
       id_pedido: `no_id_${Math.random().toString(36).slice(2)}`,
@@ -142,7 +136,6 @@ serve(async (req) => {
     const body = await req.json();
     const csvTexts: string[] = Array.isArray(body.csv_data) ? body.csv_data : [body.csv_data];
 
-    // Parse all CSVs into rows, then group by order ID
     const allRows: OrderRow[] = [];
     for (const csv of csvTexts) {
       const parsed = parseCSV(csv);
@@ -151,21 +144,10 @@ serve(async (req) => {
 
     const groupedOrders = groupByOrderId(allRows);
 
-    // Load all customers for matching
-    const { data: customers } = await supabase.from("customers").select("id, bling_id, telefone, nome");
-    const byBling = new Map<string, { id: string; telefone: string }>();
-    const byPhone = new Map<string, { id: string; bling_id: string | null }>();
-
-    for (const c of customers || []) {
-      if (c.bling_id) byBling.set(c.bling_id, { id: c.id, telefone: c.telefone });
-      if (c.telefone) byPhone.set(c.telefone, { id: c.id, bling_id: c.bling_id });
-    }
-
     let vinculados = 0;
     let falhas = 0;
-    let leadsConvertidos = 0;
+    let novos_clientes = 0;
     const inconsistencias: { order: GroupedOrder; motivo: string }[] = [];
-    const clientesAtualizados = new Set<string>();
 
     for (const order of groupedOrders) {
       if (order.valor_total <= 0 && !order.bling_id) {
@@ -174,62 +156,28 @@ serve(async (req) => {
         continue;
       }
 
-      let matched: { id: string; telefone?: string; bling_id?: string | null } | null = null;
-
-      // Priority: bling_id
-      if (order.bling_id && byBling.has(order.bling_id)) {
-        const m = byBling.get(order.bling_id)!;
-        matched = { id: m.id, telefone: m.telefone };
-      }
-      // Fallback: telefone
-      if (!matched && order.telefone && byPhone.has(order.telefone)) {
-        const m = byPhone.get(order.telefone)!;
-        matched = { id: m.id, bling_id: m.bling_id };
-      }
-
-      if (!matched) {
-        inconsistencias.push({
-          order,
-          motivo: `Cliente não encontrado (bling_id: ${order.bling_id || "N/A"}, telefone: ${order.telefone || "N/A"})`,
-        });
-        falhas++;
-        continue;
-      }
-
-      const { error } = await supabase.rpc("registrar_pedido", {
+      // Use the updated RPC that handles orders table + customer creation
+      const { data, error } = await supabase.rpc("registrar_pedido", {
         _bling_id: order.bling_id || null,
         _telefone: order.telefone || null,
         _valor_pedido: order.valor_total,
         _data_pedido: order.data_pedido || new Date().toISOString(),
+        _id_pedido: order.id_pedido || null,
+        _nome_cliente: order.nome_cliente || null,
       });
 
       if (error) {
-        inconsistencias.push({ order, motivo: `Erro ao atualizar: ${error.message}` });
+        inconsistencias.push({ order, motivo: `Erro: ${error.message}` });
         falhas++;
         continue;
       }
 
-      vinculados++;
-      clientesAtualizados.add(matched.id);
-    }
-
-    // Mark leads as converted
-    for (const customerId of clientesAtualizados) {
-      const customer = (customers || []).find(c => c.id === customerId);
-      if (!customer?.telefone) continue;
-
-      const { data: leads } = await supabase
-        .from("leads_pipeline")
-        .select("id")
-        .eq("telefone", customer.telefone)
-        .eq("convertido", false)
-        .order("data_interacao", { ascending: false })
-        .limit(1);
-
-      if (leads && leads.length > 0) {
-        await supabase.from("leads_pipeline").update({ convertido: true }).eq("id", leads[0].id);
-        leadsConvertidos++;
+      // Check if a new customer was created (data_conversao matches this order date)
+      if (data && data.length > 0 && data[0].total_pedidos === 1) {
+        novos_clientes++;
       }
+
+      vinculados++;
     }
 
     const resumo = {
@@ -237,8 +185,7 @@ serve(async (req) => {
       total_pedidos_unicos: groupedOrders.length,
       vinculados,
       falhas,
-      clientes_atualizados: clientesAtualizados.size,
-      leads_convertidos: leadsConvertidos,
+      novos_clientes,
       inconsistencias: inconsistencias.map(i => ({
         id_pedido: i.order.id_pedido || null,
         bling_id: i.order.bling_id || null,

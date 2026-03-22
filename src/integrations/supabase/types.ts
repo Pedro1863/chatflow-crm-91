@@ -333,6 +333,44 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          bling_id_pedido: string | null
+          created_at: string
+          customer_id: string
+          data_pedido: string
+          id: string
+          id_pedido: string | null
+          valor: number
+        }
+        Insert: {
+          bling_id_pedido?: string | null
+          created_at?: string
+          customer_id: string
+          data_pedido?: string
+          id?: string
+          id_pedido?: string | null
+          valor?: number
+        }
+        Update: {
+          bling_id_pedido?: string | null
+          created_at?: string
+          customer_id?: string
+          data_pedido?: string
+          id?: string
+          id_pedido?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_events: {
         Row: {
           changed_at: string
@@ -388,82 +426,35 @@ export type Database = {
           receita_recorrentes: number
         }[]
       }
-      registrar_pedido:
-        | {
-            Args: {
-              _bling_id?: string
-              _telefone?: string
-              _valor_pedido?: number
-            }
-            Returns: {
-              bling_id: string | null
-              data_conversao: string | null
-              data_primeiro_contato: string | null
-              data_ultimo_pedido: string | null
-              id: string
-              nome: string | null
-              origem_lead: string | null
-              status_cliente: string | null
-              telefone: string
-              total_pedidos: number | null
-              valor_total_comprado: number | null
-            }[]
-            SetofOptions: {
-              from: "*"
-              to: "customers"
-              isOneToOne: false
-              isSetofReturn: true
-            }
-          }
-        | {
-            Args: {
-              _bling_id?: string
-              _data_pedido?: string
-              _telefone?: string
-              _valor_pedido?: number
-            }
-            Returns: {
-              bling_id: string | null
-              data_conversao: string | null
-              data_primeiro_contato: string | null
-              data_ultimo_pedido: string | null
-              id: string
-              nome: string | null
-              origem_lead: string | null
-              status_cliente: string | null
-              telefone: string
-              total_pedidos: number | null
-              valor_total_comprado: number | null
-            }[]
-            SetofOptions: {
-              from: "*"
-              to: "customers"
-              isOneToOne: false
-              isSetofReturn: true
-            }
-          }
-        | {
-            Args: { _telefone: string; _valor_pedido?: number }
-            Returns: {
-              bling_id: string | null
-              data_conversao: string | null
-              data_primeiro_contato: string | null
-              data_ultimo_pedido: string | null
-              id: string
-              nome: string | null
-              origem_lead: string | null
-              status_cliente: string | null
-              telefone: string
-              total_pedidos: number | null
-              valor_total_comprado: number | null
-            }[]
-            SetofOptions: {
-              from: "*"
-              to: "customers"
-              isOneToOne: false
-              isSetofReturn: true
-            }
-          }
+      registrar_pedido: {
+        Args: {
+          _bling_id?: string
+          _data_pedido?: string
+          _id_pedido?: string
+          _nome_cliente?: string
+          _telefone?: string
+          _valor_pedido?: number
+        }
+        Returns: {
+          bling_id: string | null
+          data_conversao: string | null
+          data_primeiro_contato: string | null
+          data_ultimo_pedido: string | null
+          id: string
+          nome: string | null
+          origem_lead: string | null
+          status_cliente: string | null
+          telefone: string
+          total_pedidos: number | null
+          valor_total_comprado: number | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "customers"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       conversion_probability: "baixa" | "media" | "alta" | "muito_alta"
