@@ -12,7 +12,17 @@ interface OrderRow {
   valor_pedido: number;
   data_pedido?: string;
   nome_cliente?: string;
+  id_pedido?: string;
   raw: Record<string, string>;
+}
+
+interface GroupedOrder {
+  id_pedido: string;
+  bling_id?: string;
+  telefone?: string;
+  valor_total: number;
+  data_pedido?: string;
+  nome_cliente?: string;
 }
 
 function parseCSV(text: string): Record<string, string>[] {
@@ -44,13 +54,15 @@ function parseValue(val: string): number {
 }
 
 function mapRow(raw: Record<string, string>): OrderRow {
-  const bling_id = raw["id"] || raw["bling_id"] || raw["id_pedido"] || raw["numero"] || "";
+  const id_pedido = raw["id"] || raw["id_pedido"] || raw["numero"] || raw["número"] || "";
+  const bling_id = raw["bling_id"] || raw["id_contato"] || "";
   const telefone = raw["telefone"] || raw["fone"] || raw["celular"] || raw["phone"] || "";
-  const valor = raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || "0";
+  const valor = raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || raw["totalvenda"] || "0";
   const data = raw["data"] || raw["data_pedido"] || raw["date"] || "";
-  const nome = raw["nome"] || raw["cliente"] || raw["nome_cliente"] || "";
+  const nome = raw["nome"] || raw["cliente"] || raw["nome_cliente"] || raw["nomecontato"] || "";
 
   return {
+    id_pedido: id_pedido || undefined,
     bling_id: bling_id || undefined,
     telefone: telefone ? normalizePhone(telefone) : undefined,
     valor_pedido: parseValue(valor),
@@ -58,6 +70,51 @@ function mapRow(raw: Record<string, string>): OrderRow {
     nome_cliente: nome || undefined,
     raw,
   };
+}
+
+function groupByOrderId(rows: OrderRow[]): GroupedOrder[] {
+  const groups = new Map<string, OrderRow[]>();
+  const noId: OrderRow[] = [];
+
+  for (const row of rows) {
+    if (row.id_pedido) {
+      const existing = groups.get(row.id_pedido) || [];
+      existing.push(row);
+      groups.set(row.id_pedido, existing);
+    } else {
+      noId.push(row);
+    }
+  }
+
+  const result: GroupedOrder[] = [];
+
+  // Grouped orders: sum values, use first row for metadata
+  for (const [id_pedido, orderRows] of groups) {
+    const first = orderRows[0];
+    const valor_total = orderRows.reduce((sum, r) => sum + r.valor_pedido, 0);
+    result.push({
+      id_pedido,
+      bling_id: first.bling_id,
+      telefone: first.telefone,
+      valor_total,
+      data_pedido: first.data_pedido,
+      nome_cliente: first.nome_cliente,
+    });
+  }
+
+  // Rows without id_pedido: treat each as individual order
+  for (const row of noId) {
+    result.push({
+      id_pedido: `no_id_${Math.random().toString(36).slice(2)}`,
+      bling_id: row.bling_id,
+      telefone: row.telefone,
+      valor_total: row.valor_pedido,
+      data_pedido: row.data_pedido,
+      nome_cliente: row.nome_cliente,
+    });
+  }
+
+  return result;
 }
 
 serve(async (req) => {
@@ -74,12 +131,14 @@ serve(async (req) => {
     const body = await req.json();
     const csvTexts: string[] = Array.isArray(body.csv_data) ? body.csv_data : [body.csv_data];
 
-    // Parse all CSVs into one list
+    // Parse all CSVs into rows, then group by order ID
     const allRows: OrderRow[] = [];
     for (const csv of csvTexts) {
       const parsed = parseCSV(csv);
       allRows.push(...parsed.map(mapRow));
     }
+
+    const groupedOrders = groupByOrderId(allRows);
 
     // Load all customers for matching
     const { data: customers } = await supabase.from("customers").select("id, bling_id, telefone, nome");
@@ -94,30 +153,27 @@ serve(async (req) => {
     let vinculados = 0;
     let falhas = 0;
     let leadsConvertidos = 0;
-    const inconsistencias: { order: OrderRow; motivo: string }[] = [];
+    const inconsistencias: { order: GroupedOrder; motivo: string }[] = [];
     const clientesAtualizados = new Set<string>();
 
-    for (const order of allRows) {
-      if (order.valor_pedido <= 0 && !order.bling_id) {
+    for (const order of groupedOrders) {
+      if (order.valor_total <= 0 && !order.bling_id) {
         inconsistencias.push({ order, motivo: "Pedido sem valor e sem identificador" });
         falhas++;
         continue;
       }
 
       let matched: { id: string; telefone?: string; bling_id?: string | null } | null = null;
-      let matchMethod = "";
 
       // Priority: bling_id
       if (order.bling_id && byBling.has(order.bling_id)) {
         const m = byBling.get(order.bling_id)!;
         matched = { id: m.id, telefone: m.telefone };
-        matchMethod = "bling_id";
       }
       // Fallback: telefone
       if (!matched && order.telefone && byPhone.has(order.telefone)) {
         const m = byPhone.get(order.telefone)!;
         matched = { id: m.id, bling_id: m.bling_id };
-        matchMethod = "telefone";
       }
 
       if (!matched) {
@@ -129,11 +185,11 @@ serve(async (req) => {
         continue;
       }
 
-      // Update customer via direct update (not RPC to avoid trigger side effects)
       const { error } = await supabase.rpc("registrar_pedido", {
         _bling_id: order.bling_id || null,
         _telefone: order.telefone || null,
-        _valor_pedido: order.valor_pedido,
+        _valor_pedido: order.valor_total,
+        _data_pedido: order.data_pedido || new Date().toISOString(),
       });
 
       if (error) {
@@ -146,7 +202,7 @@ serve(async (req) => {
       clientesAtualizados.add(matched.id);
     }
 
-    // Mark leads as converted for updated customers
+    // Mark leads as converted
     for (const customerId of clientesAtualizados) {
       const customer = (customers || []).find(c => c.id === customerId);
       if (!customer?.telefone) continue;
@@ -160,25 +216,24 @@ serve(async (req) => {
         .limit(1);
 
       if (leads && leads.length > 0) {
-        await supabase
-          .from("leads_pipeline")
-          .update({ convertido: true })
-          .eq("id", leads[0].id);
+        await supabase.from("leads_pipeline").update({ convertido: true }).eq("id", leads[0].id);
         leadsConvertidos++;
       }
     }
 
     const resumo = {
-      total_pedidos: allRows.length,
+      total_linhas_csv: allRows.length,
+      total_pedidos_unicos: groupedOrders.length,
       vinculados,
       falhas,
       clientes_atualizados: clientesAtualizados.size,
       leads_convertidos: leadsConvertidos,
       inconsistencias: inconsistencias.map(i => ({
+        id_pedido: i.order.id_pedido || null,
         bling_id: i.order.bling_id || null,
         telefone: i.order.telefone || null,
         nome: i.order.nome_cliente || null,
-        valor: i.order.valor_pedido,
+        valor: i.order.valor_total,
         motivo: i.motivo,
       })),
     };

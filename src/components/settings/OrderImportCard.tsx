@@ -15,7 +15,8 @@ type Inconsistencia = {
 };
 
 type ImportResult = {
-  total_pedidos: number;
+  total_linhas_csv: number;
+  total_pedidos_unicos: number;
   vinculados: number;
   falhas: number;
   clientes_atualizados: number;
@@ -142,13 +143,17 @@ const OrderImportCard = () => {
         {result && (
           <div className="space-y-3 border-t pt-4">
             <h4 className="text-sm font-semibold">Resumo da Importação</h4>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div className="bg-muted rounded-lg p-3 text-center">
-                <p className="text-lg font-bold">{result.total_pedidos}</p>
-                <p className="text-xs text-muted-foreground">Total de pedidos</p>
+                <p className="text-lg font-bold">{result.total_linhas_csv}</p>
+                <p className="text-xs text-muted-foreground">Linhas no CSV</p>
               </div>
-              <div className="bg-green-500/10 rounded-lg p-3 text-center">
-                <p className="text-lg font-bold text-green-600">{result.vinculados}</p>
+              <div className="bg-muted rounded-lg p-3 text-center">
+                <p className="text-lg font-bold">{result.total_pedidos_unicos}</p>
+                <p className="text-xs text-muted-foreground">Pedidos únicos</p>
+              </div>
+              <div className="bg-primary/10 rounded-lg p-3 text-center">
+                <p className="text-lg font-bold text-primary">{result.vinculados}</p>
                 <p className="text-xs text-muted-foreground">Vinculados</p>
               </div>
               <div className="bg-muted rounded-lg p-3 text-center">
