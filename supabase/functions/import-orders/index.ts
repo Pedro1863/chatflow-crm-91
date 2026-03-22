@@ -26,7 +26,9 @@ interface GroupedOrder {
 }
 
 function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.trim().split("\n");
+  // Remove BOM character if present
+  const clean = text.replace(/^\uFEFF/, "").trim();
+  const lines = clean.split("\n");
   if (lines.length < 2) return [];
   const headers = lines[0].split(";").map(h => h.trim().replace(/^"|"$/g, "").toLowerCase());
   return lines.slice(1).filter(l => l.trim()).map(line => {
