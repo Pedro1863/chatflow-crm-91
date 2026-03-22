@@ -53,20 +53,29 @@ function parseValue(val: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+function parseDateBR(dateStr: string): string {
+  // Handle DD/MM/YYYY format
+  const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (match) {
+    return `${match[3]}-${match[2]}-${match[1]}`;
+  }
+  return dateStr;
+}
+
 function mapRow(raw: Record<string, string>): OrderRow {
-  const id_pedido = raw["id"] || raw["id_pedido"] || raw["numero"] || raw["número"] || "";
-  const bling_id = raw["bling_id"] || raw["id_contato"] || "";
+  const id_pedido = raw["n° do pedido"] || raw["nº do pedido"] || raw["numero"] || raw["número"] || raw["id_pedido"] || raw["id"] || "";
+  const bling_id = raw["id contato"] || raw["id_contato"] || raw["bling_id"] || "";
   const telefone = raw["telefone"] || raw["fone"] || raw["celular"] || raw["phone"] || "";
-  const valor = raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || raw["totalvenda"] || "0";
+  const valor = raw["preço total"] || raw["preco total"] || raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || raw["totalvenda"] || "0";
   const data = raw["data"] || raw["data_pedido"] || raw["date"] || "";
-  const nome = raw["nome"] || raw["cliente"] || raw["nome_cliente"] || raw["nomecontato"] || "";
+  const nome = raw["nome do contato"] || raw["nome_contato"] || raw["nomecontato"] || raw["nome"] || raw["cliente"] || raw["nome_cliente"] || "";
 
   return {
     id_pedido: id_pedido || undefined,
     bling_id: bling_id || undefined,
     telefone: telefone ? normalizePhone(telefone) : undefined,
     valor_pedido: parseValue(valor),
-    data_pedido: data || undefined,
+    data_pedido: data ? parseDateBR(data) : undefined,
     nome_cliente: nome || undefined,
     raw,
   };
