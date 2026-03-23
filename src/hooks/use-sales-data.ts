@@ -112,3 +112,26 @@ export function useAquisicaoMensal(mesesAtras = 6) {
     },
   });
 }
+
+export type Order = {
+  id: string;
+  customer_id: string;
+  id_pedido: string | null;
+  valor: number;
+  data_pedido: string;
+};
+
+export function useOrders() {
+  useRealtimeInvalidation("orders", ["orders"]);
+  return useQuery({
+    queryKey: ["orders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, customer_id, id_pedido, valor, data_pedido")
+        .order("data_pedido", { ascending: false });
+      if (error) throw error;
+      return data as Order[];
+    },
+  });
+}
