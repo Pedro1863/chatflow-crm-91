@@ -111,12 +111,9 @@ serve(async (req) => {
             updates.telefone = contact.telefone;
           }
           if (contact.cliente_desde) {
-            if (!existing.data_primeiro_contato) {
-              updates.data_primeiro_contato = contact.cliente_desde;
-            }
-            if (!existing.data_conversao) {
-              updates.data_conversao = contact.cliente_desde;
-            }
+            // Always overwrite with contact's "Cliente desde" — it's the true origin date
+            updates.data_primeiro_contato = contact.cliente_desde;
+            updates.data_conversao = contact.cliente_desde;
           }
 
           if (Object.keys(updates).length > 0) {
