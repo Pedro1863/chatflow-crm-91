@@ -74,7 +74,7 @@ const RetencaoSection = () => {
   // Base relevante: clientes com atividade nos últimos 90 dias a partir do fim do período
   // OU clientes novos (data_conversao dentro do período)
   const limiteInatividade = new Date(dateRange.to);
-  limiteInatividade.setDate(limiteInatividade.getDate() - 60);
+  limiteInatividade.setDate(limiteInatividade.getDate() - 90);
 
   const customersNoPeriodo = customers.filter((c) => {
     if (!c.data_conversao) return false;
