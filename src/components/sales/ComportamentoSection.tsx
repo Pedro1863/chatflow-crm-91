@@ -62,29 +62,27 @@ const ComportamentoSection = () => {
   );
 
   // Agrupar pedidos por cliente e calcular intervalos reais
-  const tempoMedioEntreCompras = useMemo(() => {
-    const ordersByCustomer = new Map<string, Date[]>();
-    allOrders.forEach((o) => {
-      if (!clientesAtivosERiscoIds.has(o.customer_id)) return;
-      const dates = ordersByCustomer.get(o.customer_id) || [];
-      dates.push(new Date(o.data_pedido));
-      ordersByCustomer.set(o.customer_id, dates);
-    });
+  const ordersByCustomer = new Map<string, Date[]>();
+  allOrders.forEach((o) => {
+    if (!clientesAtivosERiscoIds.has(o.customer_id)) return;
+    const dates = ordersByCustomer.get(o.customer_id) || [];
+    dates.push(new Date(o.data_pedido));
+    ordersByCustomer.set(o.customer_id, dates);
+  });
 
-    const allIntervals: number[] = [];
-    ordersByCustomer.forEach((dates) => {
-      if (dates.length < 2) return;
-      dates.sort((a, b) => a.getTime() - b.getTime());
-      for (let i = 1; i < dates.length; i++) {
-        const diff = differenceInDays(dates[i], dates[i - 1]);
-        if (diff > 0) allIntervals.push(diff);
-      }
-    });
+  const allIntervals: number[] = [];
+  ordersByCustomer.forEach((dates) => {
+    if (dates.length < 2) return;
+    dates.sort((a, b) => a.getTime() - b.getTime());
+    for (let i = 1; i < dates.length; i++) {
+      const diff = differenceInDays(dates[i], dates[i - 1]);
+      if (diff > 0) allIntervals.push(diff);
+    }
+  });
 
-    return allIntervals.length > 0
-      ? allIntervals.reduce((a, b) => a + b, 0) / allIntervals.length
-      : 0;
-  }, [allOrders, clientesAtivosERiscoIds.size, fimPeriodo.getTime()]);
+  const tempoMedioEntreCompras = allIntervals.length > 0
+    ? allIntervals.reduce((a, b) => a + b, 0) / allIntervals.length
+    : 0;
 
   const lastAq = aquisicaoData.length >= 1 ? aquisicaoData[aquisicaoData.length - 1] : null;
   const lastChurn = churnData.length >= 1 ? churnData[churnData.length - 1] : null;
