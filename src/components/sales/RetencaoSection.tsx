@@ -100,10 +100,13 @@ const RetencaoSection = () => {
 
   const pctEmRisco = totalCustomers > 0 ? (healthMap.em_risco / totalCustomers) * 100 : 0;
 
-  const lastChurn = churnData.length >= 1 ? churnData[churnData.length - 1] : null;
-  const prevChurn = churnData.length >= 2 ? churnData[churnData.length - 2] : null;
-  const churnTrend = lastChurn && prevChurn
-    ? getVariation(lastChurn.taxa_churn_percentual, prevChurn.taxa_churn_percentual)
+  // Find churn data matching the selected period's month
+  const selectedMonth = `${dateRange.from.getFullYear()}-${String(dateRange.from.getMonth() + 1).padStart(2, "0")}`;
+  const selectedChurn = churnData.find((c) => c.mes === selectedMonth) || null;
+  const selectedChurnIdx = churnData.findIndex((c) => c.mes === selectedMonth);
+  const prevChurn = selectedChurnIdx > 0 ? churnData[selectedChurnIdx - 1] : null;
+  const churnTrend = selectedChurn && prevChurn
+    ? getVariation(selectedChurn.taxa_churn_percentual, prevChurn.taxa_churn_percentual)
     : undefined;
 
   const churnIncreasing = churnTrend !== undefined && churnTrend > 10;
