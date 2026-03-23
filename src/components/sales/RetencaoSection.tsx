@@ -141,11 +141,44 @@ const RetencaoSection = () => {
       </SectionHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <MetricCard icon={HeartPulse} label="Clientes Ativos" value={healthMap.saudavel} sub="Pedido nos últimos 15 dias" />
-        <MetricCard icon={AlertTriangle} label="Em Risco" value={healthMap.em_risco} sub={`${pctEmRisco.toFixed(1)}% da base`} />
-        <MetricCard icon={UserX} label="Inativos / Churn" value={healthMap.inativo} sub="> 30 dias sem pedido" />
+        <MetricCard icon={HeartPulse} label="Clientes Ativos" value={healthMap.saudavel} sub="Pedido nos últimos 15 dias" onClick={() => setActiveModal("saudavel")} />
+        <MetricCard icon={AlertTriangle} label="Em Risco" value={healthMap.em_risco} sub={`${pctEmRisco.toFixed(1)}% da base`} onClick={() => setActiveModal("em_risco")} />
+        <MetricCard icon={UserX} label="Inativos / Churn" value={healthMap.inativo} sub="> 30 dias sem pedido" onClick={() => setActiveModal("inativo")} />
         <MetricCard icon={ShieldCheck} label="Churn Atual" value={selectedChurn ? `${selectedChurn.taxa_churn_percentual}%` : "—"} sub={selectedChurn ? selectedChurn.mes : ""} trend={churnTrend} invertTrend />
       </div>
+
+      <Dialog open={activeModal !== null} onOpenChange={() => setActiveModal(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {activeModal === "saudavel" && `Clientes Ativos (${healthMap.saudavel})`}
+              {activeModal === "em_risco" && `Clientes Em Risco (${healthMap.em_risco})`}
+              {activeModal === "inativo" && `Clientes Inativos (${healthMap.inativo})`}
+            </DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-2 pr-4">
+              {activeModal && customersByHealth[activeModal].map((c) => {
+                const lastOrder = lastOrderByCustomer.get(c.id) || null;
+                const days = lastOrder ? differenceInDays(dateRange.to, new Date(lastOrder)) : null;
+                return (
+                  <div key={c.id} className="rounded-md border bg-muted/30 p-3 flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{c.nome || c.telefone}</p>
+                      <p className="text-xs text-muted-foreground">{c.total_pedidos} pedidos</p>
+                    </div>
+                    <span className={`text-sm font-bold ${
+                      activeModal === "saudavel" ? "text-primary" : activeModal === "em_risco" ? "text-chart-3" : "text-destructive"
+                    }`}>
+                      {days !== null ? `${days}d` : "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
