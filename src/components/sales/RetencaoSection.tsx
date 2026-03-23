@@ -40,9 +40,9 @@ const churnConfig: ChartConfig = {
   taxa_churn_percentual: { label: "Taxa de Churn (%)", color: "hsl(var(--chart-5))" },
 };
 
-function classifyHealth(dataUltimoPedido: string | null): "saudavel" | "em_risco" | "inativo" {
+function classifyHealth(dataUltimoPedido: string | null, referenceDate: Date): "saudavel" | "em_risco" | "inativo" {
   if (!dataUltimoPedido) return "inativo";
-  const days = differenceInDays(new Date(), new Date(dataUltimoPedido));
+  const days = differenceInDays(referenceDate, new Date(dataUltimoPedido));
   if (days <= 15) return "saudavel";
   if (days <= 30) return "em_risco";
   return "inativo";
