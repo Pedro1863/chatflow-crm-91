@@ -61,7 +61,8 @@ function parseDateBR(dateStr: string): string {
 }
 
 function mapRow(raw: Record<string, string>): OrderRow {
-  const id_pedido = raw["n° do pedido"] || raw["nº do pedido"] || raw["numero"] || raw["número"] || raw["id_pedido"] || raw["id"] || "";
+  // Use only "n° do pedido" / "nº do pedido" as order ID — ignore "id" (Bling internal) and "nº do pedido na loja virtual" (e-commerce)
+  const id_pedido = raw["n° do pedido"] || raw["nº do pedido"] || raw["numero"] || raw["número"] || raw["id_pedido"] || "";
   const bling_id = raw["id contato"] || raw["id_contato"] || raw["bling_id"] || "";
   const telefone = raw["telefone"] || raw["fone"] || raw["celular"] || raw["phone"] || "";
   const valor = raw["preço total"] || raw["preco total"] || raw["valor"] || raw["valor_pedido"] || raw["total"] || raw["valor_total"] || raw["totalvenda"] || "0";
