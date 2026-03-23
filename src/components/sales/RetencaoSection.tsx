@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCustomers, useChurnMensal } from "@/hooks/use-sales-data";
+import { useCustomers, useOrders, useChurnMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -40,9 +40,9 @@ const churnConfig: ChartConfig = {
   taxa_churn_percentual: { label: "Taxa de Churn (%)", color: "hsl(var(--chart-5))" },
 };
 
-function classifyHealth(dataUltimoPedido: string | null): "saudavel" | "em_risco" | "inativo" {
+function classifyHealth(dataUltimoPedido: string | null, referenceDate: Date): "saudavel" | "em_risco" | "inativo" {
   if (!dataUltimoPedido) return "inativo";
-  const days = differenceInDays(new Date(), new Date(dataUltimoPedido));
+  const days = differenceInDays(referenceDate, new Date(dataUltimoPedido));
   if (days <= 15) return "saudavel";
   if (days <= 30) return "em_risco";
   return "inativo";
@@ -55,6 +55,7 @@ function defaultRange(): DateRange {
 
 const RetencaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
+  const { data: orders = [] } = useOrders();
   const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
@@ -67,20 +68,28 @@ const RetencaoSection = () => {
     );
   }
 
-  // Filter customers that had activity in the selected period
-  const filteredCustomers = customers.filter((c) => {
-    if (!c.data_ultimo_pedido && !c.data_conversao) return false;
-    const refDate = c.data_ultimo_pedido || c.data_conversao;
-    if (!refDate) return false;
-    const d = new Date(refDate);
-    return d >= dateRange.from && d <= dateRange.to;
+  // Customers who existed before or at the start of the period (had data_conversao before end of period)
+  const customersNoPeriodo = customers.filter((c) => {
+    if (!c.data_conversao) return false;
+    return new Date(c.data_conversao) <= dateRange.to;
   });
 
-  // Health is always based on current state (recency from today)
-  const totalCustomers = customers.length;
+  // For each customer, find their last order date WITHIN or before the period end
+  const ordersAtePeriodo = orders.filter((o) => new Date(o.data_pedido) <= dateRange.to);
+  const lastOrderByCustomer = new Map<string, string>();
+  ordersAtePeriodo.forEach((o) => {
+    const existing = lastOrderByCustomer.get(o.customer_id);
+    if (!existing || o.data_pedido > existing) {
+      lastOrderByCustomer.set(o.customer_id, o.data_pedido);
+    }
+  });
+
+  // Health classification relative to the END of the selected period
+  const totalCustomers = customersNoPeriodo.length;
   const healthMap = { saudavel: 0, em_risco: 0, inativo: 0 };
-  customers.forEach((c) => {
-    healthMap[classifyHealth(c.data_ultimo_pedido)]++;
+  customersNoPeriodo.forEach((c) => {
+    const lastOrder = lastOrderByCustomer.get(c.id) || null;
+    healthMap[classifyHealth(lastOrder, dateRange.to)]++;
   });
 
   const healthData = [
@@ -91,10 +100,13 @@ const RetencaoSection = () => {
 
   const pctEmRisco = totalCustomers > 0 ? (healthMap.em_risco / totalCustomers) * 100 : 0;
 
-  const lastChurn = churnData.length >= 1 ? churnData[churnData.length - 1] : null;
-  const prevChurn = churnData.length >= 2 ? churnData[churnData.length - 2] : null;
-  const churnTrend = lastChurn && prevChurn
-    ? getVariation(lastChurn.taxa_churn_percentual, prevChurn.taxa_churn_percentual)
+  // Find churn data matching the selected period's month
+  const selectedMonth = `${dateRange.from.getFullYear()}-${String(dateRange.from.getMonth() + 1).padStart(2, "0")}`;
+  const selectedChurn = churnData.find((c) => c.mes === selectedMonth) || null;
+  const selectedChurnIdx = churnData.findIndex((c) => c.mes === selectedMonth);
+  const prevChurn = selectedChurnIdx > 0 ? churnData[selectedChurnIdx - 1] : null;
+  const churnTrend = selectedChurn && prevChurn
+    ? getVariation(selectedChurn.taxa_churn_percentual, prevChurn.taxa_churn_percentual)
     : undefined;
 
   const churnIncreasing = churnTrend !== undefined && churnTrend > 10;
@@ -114,7 +126,7 @@ const RetencaoSection = () => {
         <MetricCard icon={HeartPulse} label="Clientes Ativos" value={healthMap.saudavel} sub="Pedido nos últimos 15 dias" />
         <MetricCard icon={AlertTriangle} label="Em Risco" value={healthMap.em_risco} sub={`${pctEmRisco.toFixed(1)}% da base`} />
         <MetricCard icon={UserX} label="Inativos / Churn" value={healthMap.inativo} sub="> 30 dias sem pedido" />
-        <MetricCard icon={ShieldCheck} label="Churn Atual" value={lastChurn ? `${lastChurn.taxa_churn_percentual}%` : "—"} sub={lastChurn ? lastChurn.mes : ""} trend={churnTrend} invertTrend />
+        <MetricCard icon={ShieldCheck} label="Churn Atual" value={selectedChurn ? `${selectedChurn.taxa_churn_percentual}%` : "—"} sub={selectedChurn ? selectedChurn.mes : ""} trend={churnTrend} invertTrend />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
