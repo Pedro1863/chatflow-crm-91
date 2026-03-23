@@ -100,9 +100,14 @@ const RetencaoSection = () => {
   // Health classification relative to the END of the selected period
   const totalCustomers = customersNoPeriodo.length;
   const healthMap = { saudavel: 0, em_risco: 0, inativo: 0 };
+  const customersByHealth: Record<"saudavel" | "em_risco" | "inativo", typeof customersNoPeriodo> = {
+    saudavel: [], em_risco: [], inativo: [],
+  };
   customersNoPeriodo.forEach((c) => {
     const lastOrder = lastOrderByCustomer.get(c.id) || null;
-    healthMap[classifyHealth(lastOrder, dateRange.to)]++;
+    const health = classifyHealth(lastOrder, dateRange.to);
+    healthMap[health]++;
+    customersByHealth[health].push(c);
   });
 
   const healthData = [
