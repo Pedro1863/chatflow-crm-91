@@ -60,6 +60,7 @@ const RetencaoSection = () => {
   const { data: orders = [] } = useOrders();
   const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
+  const [activeModal, setActiveModal] = useState<"saudavel" | "em_risco" | "inativo" | null>(null);
 
   if (loadingC || loadingChurn) {
     return (
