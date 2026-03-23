@@ -151,8 +151,8 @@ serve(async (req) => {
     const inconsistencias: { order: GroupedOrder; motivo: string }[] = [];
 
     for (const order of groupedOrders) {
-      if (order.valor_total <= 0 && !order.bling_id) {
-        inconsistencias.push({ order, motivo: "Pedido sem valor e sem identificador" });
+      if (!order.bling_id) {
+        inconsistencias.push({ order, motivo: "Pedido sem ID Contato (bling_id) — obrigatório para identificação" });
         falhas++;
         continue;
       }
