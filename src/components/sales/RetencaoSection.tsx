@@ -126,7 +126,7 @@ const RetencaoSection = () => {
         <MetricCard icon={HeartPulse} label="Clientes Ativos" value={healthMap.saudavel} sub="Pedido nos últimos 15 dias" />
         <MetricCard icon={AlertTriangle} label="Em Risco" value={healthMap.em_risco} sub={`${pctEmRisco.toFixed(1)}% da base`} />
         <MetricCard icon={UserX} label="Inativos / Churn" value={healthMap.inativo} sub="> 30 dias sem pedido" />
-        <MetricCard icon={ShieldCheck} label="Churn Atual" value={lastChurn ? `${lastChurn.taxa_churn_percentual}%` : "—"} sub={lastChurn ? lastChurn.mes : ""} trend={churnTrend} invertTrend />
+        <MetricCard icon={ShieldCheck} label="Churn Atual" value={selectedChurn ? `${selectedChurn.taxa_churn_percentual}%` : "—"} sub={selectedChurn ? selectedChurn.mes : ""} trend={churnTrend} invertTrend />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
