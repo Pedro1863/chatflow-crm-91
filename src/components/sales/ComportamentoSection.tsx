@@ -48,8 +48,16 @@ const ComportamentoSection = () => {
   const totalPedidos = filteredCustomers.reduce((s, c) => s + (c.total_pedidos || 0), 0);
   const freqMedia = totalFiltered > 0 ? totalPedidos / totalFiltered : 0;
 
-  const temposMedios = clientesRecompra
-    .filter((c) => c.data_conversao && c.data_ultimo_pedido)
+  // Tempo médio entre compras: baseado em clientes ativos (≤15d) e em risco (15-30d) do período
+  const fimPeriodo = dateRange.to;
+  const clientesAtivosERisco = customers.filter((c) => {
+    if (!c.data_ultimo_pedido) return false;
+    const dias = differenceInDays(fimPeriodo, new Date(c.data_ultimo_pedido));
+    return dias >= 0 && dias <= 30;
+  });
+
+  const temposMedios = clientesAtivosERisco
+    .filter((c) => (c.total_pedidos || 1) > 1 && c.data_conversao && c.data_ultimo_pedido)
     .map((c) => {
       const dias = differenceInDays(new Date(c.data_ultimo_pedido!), new Date(c.data_conversao!));
       const intervalos = (c.total_pedidos || 1) - 1;
