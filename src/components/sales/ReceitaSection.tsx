@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCustomers, useAquisicaoMensal } from "@/hooks/use-sales-data";
+import { useOrders, useCustomers, useAquisicaoMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -27,11 +27,12 @@ function defaultRange(): DateRange {
 }
 
 const ReceitaSection = () => {
+  const { data: orders = [], isLoading: loadingO } = useOrders();
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
-  if (loadingC || loadingM) {
+  if (loadingO || loadingC || loadingM) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -40,19 +41,33 @@ const ReceitaSection = () => {
     );
   }
 
-  // Filter customers whose last order is within the date range for card metrics
-  const filteredCustomers = customers.filter((c) => {
-    if (!c.data_ultimo_pedido) return false;
-    const d = new Date(c.data_ultimo_pedido);
+  // Build a map of customer_id -> data_conversao for novo/recorrente classification
+  const customerConversaoMap = new Map<string, string | null>();
+  customers.forEach((c) => {
+    customerConversaoMap.set(c.id, c.data_conversao);
+  });
+
+  // Filter orders within the selected date range
+  const filteredOrders = orders.filter((o) => {
+    const d = new Date(o.data_pedido);
     return d >= dateRange.from && d <= dateRange.to;
   });
 
-  const receitaTotal = filteredCustomers.reduce((sum, c) => sum + (c.valor_total_comprado || 0), 0);
-  const totalPedidos = filteredCustomers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
+  const receitaTotal = filteredOrders.reduce((sum, o) => sum + (o.valor || 0), 0);
+  const totalPedidos = filteredOrders.length;
   const ticketMedio = totalPedidos > 0 ? receitaTotal / totalPedidos : 0;
 
-  const receitaNovos = filteredCustomers.filter(c => c.total_pedidos === 1).reduce((s, c) => s + (c.valor_total_comprado || 0), 0);
-  const receitaRecorrentes = filteredCustomers.filter(c => (c.total_pedidos || 0) > 1).reduce((s, c) => s + (c.valor_total_comprado || 0), 0);
+  // Receita de novos: pedidos de clientes cuja data_conversao está dentro do período
+  const receitaNovos = filteredOrders
+    .filter((o) => {
+      const conversao = customerConversaoMap.get(o.customer_id);
+      if (!conversao) return false;
+      const dc = new Date(conversao);
+      return dc >= dateRange.from && dc <= dateRange.to;
+    })
+    .reduce((s, o) => s + (o.valor || 0), 0);
+
+  const receitaRecorrentes = receitaTotal - receitaNovos;
 
   const lastM = monthlyData.length >= 1 ? monthlyData[monthlyData.length - 1] : null;
   const prevM = monthlyData.length >= 2 ? monthlyData[monthlyData.length - 2] : null;
