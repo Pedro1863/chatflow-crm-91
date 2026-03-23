@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getN8nWebhookUrl, setN8nWebhookUrl } from "@/hooks/use-crm-data";
 import OrderImportCard from "./OrderImportCard";
+import ContactImportCard from "./ContactImportCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
