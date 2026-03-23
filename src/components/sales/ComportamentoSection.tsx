@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCustomers, useChurnMensal, useAquisicaoMensal } from "@/hooks/use-sales-data";
+import { useCustomers, useChurnMensal, useAquisicaoMensal, useOrders } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,14 @@ function defaultRange(): DateRange {
 
 const ComportamentoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
+  const { data: allOrders = [], isLoading: loadingO } = useOrders();
   const [showAllRisco, setShowAllRisco] = useState(false);
   const meses = mesesDesdeMarco2026();
   const { data: churnData = [] } = useChurnMensal(meses);
   const { data: aquisicaoData = [] } = useAquisicaoMensal(meses);
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
-  if (loadingC) {
+  if (loadingC || loadingO) {
     return (
       <div className="flex items-center justify-center py-8 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -48,25 +49,39 @@ const ComportamentoSection = () => {
   const totalPedidos = filteredCustomers.reduce((s, c) => s + (c.total_pedidos || 0), 0);
   const freqMedia = totalFiltered > 0 ? totalPedidos / totalFiltered : 0;
 
-  // Tempo médio entre compras: baseado em clientes ativos (≤15d) e em risco (15-30d) do período
+  // Tempo médio entre compras: intervalos reais entre pedidos dos clientes ativos/em risco
   const fimPeriodo = dateRange.to;
-  const clientesAtivosERisco = customers.filter((c) => {
-    if (!c.data_ultimo_pedido) return false;
-    const dias = differenceInDays(fimPeriodo, new Date(c.data_ultimo_pedido));
-    return dias >= 0 && dias <= 30;
+  const clientesAtivosERiscoIds = new Set(
+    customers
+      .filter((c) => {
+        if (!c.data_ultimo_pedido) return false;
+        const dias = differenceInDays(fimPeriodo, new Date(c.data_ultimo_pedido));
+        return dias >= 0 && dias <= 30;
+      })
+      .map((c) => c.id)
+  );
+
+  // Agrupar pedidos por cliente e calcular intervalos reais
+  const ordersByCustomer = new Map<string, Date[]>();
+  allOrders.forEach((o) => {
+    if (!clientesAtivosERiscoIds.has(o.customer_id)) return;
+    const dates = ordersByCustomer.get(o.customer_id) || [];
+    dates.push(new Date(o.data_pedido));
+    ordersByCustomer.set(o.customer_id, dates);
   });
 
-  const temposMedios = clientesAtivosERisco
-    .filter((c) => (c.total_pedidos || 1) > 1 && c.data_conversao && c.data_ultimo_pedido)
-    .map((c) => {
-      const dias = differenceInDays(new Date(c.data_ultimo_pedido!), new Date(c.data_conversao!));
-      const intervalos = (c.total_pedidos || 1) - 1;
-      return intervalos > 0 ? dias / intervalos : 0;
-    })
-    .filter((t) => t > 0);
+  const allIntervals: number[] = [];
+  ordersByCustomer.forEach((dates) => {
+    if (dates.length < 2) return;
+    dates.sort((a, b) => a.getTime() - b.getTime());
+    for (let i = 1; i < dates.length; i++) {
+      const diff = differenceInDays(dates[i], dates[i - 1]);
+      if (diff > 0) allIntervals.push(diff);
+    }
+  });
 
-  const tempoMedioEntreCompras = temposMedios.length > 0
-    ? temposMedios.reduce((a, b) => a + b, 0) / temposMedios.length
+  const tempoMedioEntreCompras = allIntervals.length > 0
+    ? allIntervals.reduce((a, b) => a + b, 0) / allIntervals.length
     : 0;
 
   const lastAq = aquisicaoData.length >= 1 ? aquisicaoData[aquisicaoData.length - 1] : null;
