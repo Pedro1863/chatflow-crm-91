@@ -68,10 +68,20 @@ const RetencaoSection = () => {
     );
   }
 
-  // Customers who existed before or at the start of the period (had data_conversao before end of period)
+  // Base relevante: clientes com atividade nos últimos 90 dias a partir do fim do período
+  // OU clientes novos (data_conversao dentro do período)
+  const limiteInatividade = new Date(dateRange.to);
+  limiteInatividade.setDate(limiteInatividade.getDate() - 90);
+
   const customersNoPeriodo = customers.filter((c) => {
     if (!c.data_conversao) return false;
-    return new Date(c.data_conversao) <= dateRange.to;
+    if (new Date(c.data_conversao) > dateRange.to) return false;
+    // Incluir se: último pedido nos últimos 90 dias OU convertido no período
+    const ultimoPedido = c.data_ultimo_pedido ? new Date(c.data_ultimo_pedido) : null;
+    const conversao = new Date(c.data_conversao);
+    const ativoRecente = ultimoPedido && ultimoPedido >= limiteInatividade;
+    const novoNoPeriodo = conversao >= dateRange.from && conversao <= dateRange.to;
+    return ativoRecente || novoNoPeriodo;
   });
 
   // For each customer, find their last order date WITHIN or before the period end
