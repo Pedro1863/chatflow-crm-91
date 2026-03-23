@@ -59,11 +59,7 @@ const AquisicaoSection = () => {
   const totalCustomers = clientesComPedidoNoPeriodo;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
 
-  // Count orders in the selected date range (not lifetime totals)
-  const totalVendas = orders.filter((o) => {
-    const d = new Date(o.data_pedido);
-    return d >= dateRange.from && d <= dateRange.to;
-  }).length;
+  const totalVendas = ordersNoPeriodo.length;
   const totalTentativas = leads.length + totalVendas;
   const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
 
