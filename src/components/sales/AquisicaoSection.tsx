@@ -48,10 +48,15 @@ const AquisicaoSection = () => {
     return d >= dateRange.from && d <= dateRange.to;
   });
 
-  const clientesComPedido = customers.filter((c) => (c.total_pedidos || 0) >= 1);
+  // Customers who had orders in the selected period
+  const ordersNoPeriodo = orders.filter((o) => {
+    const d = new Date(o.data_pedido);
+    return d >= dateRange.from && d <= dateRange.to;
+  });
+  const clientesComPedidoNoPeriodo = new Set(ordersNoPeriodo.map((o) => o.customer_id)).size;
   const leadsUnicos = new Set(leads.map((l) => l.telefone)).size;
-  const totalLeads = leadsUnicos + clientesComPedido.length;
-  const totalCustomers = clientesComPedido.length;
+  const totalLeads = leadsUnicos + clientesComPedidoNoPeriodo;
+  const totalCustomers = clientesComPedidoNoPeriodo;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
 
   // Count orders in the selected date range (not lifetime totals)
