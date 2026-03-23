@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCustomers, useChurnMensal } from "@/hooks/use-sales-data";
+import { useCustomers, useOrders, useChurnMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
