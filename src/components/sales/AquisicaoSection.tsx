@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCustomers, useLeadsPipeline, useAquisicaoMensal } from "@/hooks/use-sales-data";
+import { useCustomers, useLeadsPipeline, useAquisicaoMensal, useOrders } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
