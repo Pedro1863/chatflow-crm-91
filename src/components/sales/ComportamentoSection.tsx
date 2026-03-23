@@ -135,14 +135,42 @@ const ComportamentoSection = () => {
                 );
               })}
               {clientesEntrandoEmRisco.length > 9 && (
-                <div className="rounded-md border bg-muted/30 p-3 flex items-center justify-center">
-                  <p className="text-sm text-muted-foreground">+{clientesEntrandoEmRisco.length - 9} clientes</p>
-                </div>
+                <Button
+                  variant="outline"
+                  className="h-auto p-3 flex items-center justify-center"
+                  onClick={() => setShowAllRisco(true)}
+                >
+                  <p className="text-sm text-muted-foreground">Ver todos +{clientesEntrandoEmRisco.length - 9} clientes</p>
+                </Button>
               )}
             </div>
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={showAllRisco} onOpenChange={setShowAllRisco}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Clientes na Zona de Risco (13-17 dias)</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-2 pr-4">
+              {clientesEntrandoEmRisco.map((c) => {
+                const days = differenceInDays(new Date(), new Date(c.data_ultimo_pedido!));
+                return (
+                  <div key={c.id} className="rounded-md border bg-muted/30 p-3 flex justify-between items-center">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{c.nome || c.telefone}</p>
+                      <p className="text-xs text-muted-foreground">{c.total_pedidos} pedidos</p>
+                    </div>
+                    <span className="text-sm font-bold text-chart-3">{days}d</span>
+                  </div>
+                );
+              })}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
