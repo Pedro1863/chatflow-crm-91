@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useCustomers, useChurnMensal, useAquisicaoMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { RefreshCw, Clock, Activity, TrendingUp, Loader2 } from "lucide-react";
 import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import MetricCard from "./MetricCard";
