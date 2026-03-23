@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useCustomers, useChurnMensal, useAquisicaoMensal } from "@/hooks/use-sales-data";
+import { useState, useMemo } from "react";
+import { useCustomers, useChurnMensal, useAquisicaoMensal, useOrders } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
