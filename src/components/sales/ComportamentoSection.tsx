@@ -19,6 +19,7 @@ function defaultRange(): DateRange {
 
 const ComportamentoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
+  const [showAllRisco, setShowAllRisco] = useState(false);
   const meses = mesesDesdeMarco2026();
   const { data: churnData = [] } = useChurnMensal(meses);
   const { data: aquisicaoData = [] } = useAquisicaoMensal(meses);
