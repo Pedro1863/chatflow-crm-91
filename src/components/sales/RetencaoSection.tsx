@@ -55,6 +55,7 @@ function defaultRange(): DateRange {
 
 const RetencaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
+  const { data: orders = [] } = useOrders();
   const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
@@ -67,20 +68,28 @@ const RetencaoSection = () => {
     );
   }
 
-  // Filter customers that had activity in the selected period
-  const filteredCustomers = customers.filter((c) => {
-    if (!c.data_ultimo_pedido && !c.data_conversao) return false;
-    const refDate = c.data_ultimo_pedido || c.data_conversao;
-    if (!refDate) return false;
-    const d = new Date(refDate);
-    return d >= dateRange.from && d <= dateRange.to;
+  // Customers who existed before or at the start of the period (had data_conversao before end of period)
+  const customersNoPeriodo = customers.filter((c) => {
+    if (!c.data_conversao) return false;
+    return new Date(c.data_conversao) <= dateRange.to;
   });
 
-  // Health is always based on current state (recency from today)
-  const totalCustomers = customers.length;
+  // For each customer, find their last order date WITHIN or before the period end
+  const ordersAtePeriodo = orders.filter((o) => new Date(o.data_pedido) <= dateRange.to);
+  const lastOrderByCustomer = new Map<string, string>();
+  ordersAtePeriodo.forEach((o) => {
+    const existing = lastOrderByCustomer.get(o.customer_id);
+    if (!existing || o.data_pedido > existing) {
+      lastOrderByCustomer.set(o.customer_id, o.data_pedido);
+    }
+  });
+
+  // Health classification relative to the END of the selected period
+  const totalCustomers = customersNoPeriodo.length;
   const healthMap = { saudavel: 0, em_risco: 0, inativo: 0 };
-  customers.forEach((c) => {
-    healthMap[classifyHealth(c.data_ultimo_pedido)]++;
+  customersNoPeriodo.forEach((c) => {
+    const lastOrder = lastOrderByCustomer.get(c.id) || null;
+    healthMap[classifyHealth(lastOrder, dateRange.to)]++;
   });
 
   const healthData = [
