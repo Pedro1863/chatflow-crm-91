@@ -36,6 +36,7 @@ function defaultRange(): DateRange {
 const AquisicaoSection = () => {
   const { data: customers = [], isLoading: loadingC } = useCustomers();
   const { data: leads = [] } = useLeadsPipeline();
+  const { data: orders = [] } = useOrders();
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
   const [showNovos, setShowNovos] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
@@ -53,7 +54,11 @@ const AquisicaoSection = () => {
   const totalCustomers = clientesComPedido.length;
   const taxaConversao = totalLeads > 0 ? (totalCustomers / totalLeads) * 100 : 0;
 
-  const totalVendas = customers.reduce((sum, c) => sum + (c.total_pedidos || 0), 0);
+  // Count orders in the selected date range (not lifetime totals)
+  const totalVendas = orders.filter((o) => {
+    const d = new Date(o.data_pedido);
+    return d >= dateRange.from && d <= dateRange.to;
+  }).length;
   const totalTentativas = leads.length + totalVendas;
   const taxaTentativas = totalTentativas > 0 ? (totalVendas / totalTentativas) * 100 : 0;
 
