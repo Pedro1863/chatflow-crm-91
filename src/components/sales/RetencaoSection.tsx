@@ -162,7 +162,7 @@ const RetencaoSection = () => {
             <div className="space-y-2 pr-4">
               {activeModal && customersByHealth[activeModal].map((c) => {
                 const lastOrder = lastOrderByCustomer.get(c.id) || null;
-                const days = lastOrder ? differenceInDays(dateRange.to, new Date(lastOrder)) : null;
+                const days = lastOrder ? differenceInDays(referenciaHealth, new Date(lastOrder)) : null;
                 return (
                   <div key={c.id} className="rounded-md border bg-muted/30 p-3 flex justify-between items-center">
                     <div>
