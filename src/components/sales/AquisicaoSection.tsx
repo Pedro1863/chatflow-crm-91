@@ -16,7 +16,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
-import { UserPlus, TrendingUp, Percent, Loader2, Target } from "lucide-react";
+import { UserPlus, TrendingUp, Percent, Loader2, Target, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
