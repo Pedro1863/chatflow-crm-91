@@ -403,6 +403,41 @@ export type Database = {
           },
         ]
       }
+      template_sends: {
+        Row: {
+          customer_id: string
+          id: string
+          sent_at: string
+          sent_date: string
+          telefone: string
+          template_name: string
+        }
+        Insert: {
+          customer_id: string
+          id?: string
+          sent_at?: string
+          sent_date?: string
+          telefone: string
+          template_name: string
+        }
+        Update: {
+          customer_id?: string
+          id?: string
+          sent_at?: string
+          sent_date?: string
+          telefone?: string
+          template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_sends_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

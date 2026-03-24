@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCustomers, useLeadsPipeline, useAquisicaoMensal, useOrders } from "@/hooks/use-sales-data";
+import TemplateSendDialog from "./TemplateSendDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -15,7 +16,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
-import { UserPlus, TrendingUp, Percent, Loader2, Target } from "lucide-react";
+import { UserPlus, TrendingUp, Percent, Loader2, Target, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import MetricCard from "./MetricCard";
 import SectionHeader from "./SectionHeader";
@@ -39,6 +41,7 @@ const AquisicaoSection = () => {
   const { data: orders = [] } = useOrders();
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
   const [showNovos, setShowNovos] = useState(false);
+  const [showTemplate, setShowTemplate] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
   // Filter customers by date range using data_conversao
@@ -85,7 +88,13 @@ const AquisicaoSection = () => {
   return (
     <div className="space-y-4">
       <SectionHeader icon={UserPlus} title="Aquisição">
-        <DateFilter value={dateRange} onChange={setDateRange} />
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowTemplate(true)}>
+            <Send className="h-3.5 w-3.5 mr-1.5" />
+            Enviar Template
+          </Button>
+          <DateFilter value={dateRange} onChange={setDateRange} />
+        </div>
       </SectionHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -200,6 +209,14 @@ const AquisicaoSection = () => {
           </CardContent>
         </Card>
       )}
+
+      <TemplateSendDialog
+        open={showTemplate}
+        onOpenChange={setShowTemplate}
+        customers={customers}
+        templateName="template_aquisicao"
+        templateLabel="Aquisição"
+      />
     </div>
   );
 };

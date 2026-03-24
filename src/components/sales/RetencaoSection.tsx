@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useCustomers, useOrders, useChurnMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import TemplateSendDialog from "./TemplateSendDialog";
+import RetencaoAudienceDialog from "./RetencaoAudienceDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -17,6 +20,7 @@ import {
   AlertTriangle,
   UserX,
   Loader2,
+  Send,
 } from "lucide-react";
 import { differenceInDays, startOfMonth, endOfMonth } from "date-fns";
 import MetricCard from "./MetricCard";
@@ -61,6 +65,13 @@ const RetencaoSection = () => {
   const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
   const [activeModal, setActiveModal] = useState<"saudavel" | "em_risco" | "inativo" | null>(null);
+  const [showAudience, setShowAudience] = useState(false);
+  const [templateState, setTemplateState] = useState<{
+    open: boolean;
+    template: string;
+    label: string;
+    audienceKey: string;
+  }>({ open: false, template: "", label: "", audienceKey: "" });
 
   if (loadingC || loadingChurn) {
     return (
@@ -138,6 +149,10 @@ const RetencaoSection = () => {
         <div className="flex items-center gap-2">
           {churnIncreasing && <AlertBadge level="danger" message="Churn em alta" />}
           {riscoAlto && <AlertBadge level="warning" message="Muitos clientes em risco" />}
+          <Button size="sm" variant="outline" onClick={() => setShowAudience(true)}>
+            <Send className="h-3.5 w-3.5 mr-1.5" />
+            Enviar Template
+          </Button>
           <DateFilter value={dateRange} onChange={setDateRange} />
         </div>
       </SectionHeader>
@@ -240,6 +255,26 @@ const RetencaoSection = () => {
           </CardContent>
         </Card>
       </div>
+
+      <RetencaoAudienceDialog
+        open={showAudience}
+        onOpenChange={setShowAudience}
+        onSelect={(template, label, audienceKey) => {
+          setTemplateState({ open: true, template, label, audienceKey });
+        }}
+      />
+
+      <TemplateSendDialog
+        open={templateState.open}
+        onOpenChange={(open) => setTemplateState((s) => ({ ...s, open }))}
+        customers={
+          templateState.audienceKey
+            ? customersByHealth[templateState.audienceKey as "saudavel" | "em_risco" | "inativo"] || []
+            : []
+        }
+        templateName={templateState.template}
+        templateLabel={`Retenção - ${templateState.label}`}
+      />
     </div>
   );
 };
