@@ -242,7 +242,7 @@ export default function TemplateSendDialog({
         </div>
 
         {/* Contact list */}
-        <ScrollArea className="flex-1 -mx-6 px-6 min-h-0">
+        <ScrollArea className="flex-1 -mx-6 px-6 min-h-0 max-h-[45vh]">
           <div className="space-y-1.5 py-1">
             {contactList.map((c) => {
               const isEditing = editingId === c.id;
