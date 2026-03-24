@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useCustomers, useLeadsPipeline, useAquisicaoMensal, useOrders } from "@/hooks/use-sales-data";
+import TemplateSendDialog from "./TemplateSendDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
