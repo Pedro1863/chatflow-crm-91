@@ -227,7 +227,7 @@ const RetencaoSection = () => {
                     const prev = i > 0 ? churnData[i - 1] : null;
                     const variation = prev ? getVariation(item.taxa_churn_percentual, prev.taxa_churn_percentual) : undefined;
                     return (
-                      <div key={item.mes} className="rounded-md border bg-muted/30 p-2 text-center space-y-0.5">
+                      <div key={item.mes} className="rounded-md border bg-muted/30 p-2 flex flex-col items-center space-y-0.5">
                         <p className="text-[10px] text-muted-foreground">{item.mes}</p>
                         <p className="text-sm font-bold text-foreground">{item.taxa_churn_percentual}%</p>
                         {variation !== undefined && <TrendIndicator value={variation} invertColor />}
