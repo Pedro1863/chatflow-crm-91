@@ -41,6 +41,7 @@ const AquisicaoSection = () => {
   const { data: orders = [] } = useOrders();
   const { data: monthlyData = [], isLoading: loadingM } = useAquisicaoMensal(mesesDesdeMarco2026());
   const [showNovos, setShowNovos] = useState(false);
+  const [showTemplate, setShowTemplate] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
 
   // Filter customers by date range using data_conversao
