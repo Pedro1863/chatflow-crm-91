@@ -255,6 +255,26 @@ const RetencaoSection = () => {
           </CardContent>
         </Card>
       </div>
+
+      <RetencaoAudienceDialog
+        open={showAudience}
+        onOpenChange={setShowAudience}
+        onSelect={(template, label, audienceKey) => {
+          setTemplateState({ open: true, template, label, audienceKey });
+        }}
+      />
+
+      <TemplateSendDialog
+        open={templateState.open}
+        onOpenChange={(open) => setTemplateState((s) => ({ ...s, open }))}
+        customers={
+          templateState.audienceKey
+            ? customersByHealth[templateState.audienceKey as "saudavel" | "em_risco" | "inativo"] || []
+            : []
+        }
+        templateName={templateState.template}
+        templateLabel={`Retenção - ${templateState.label}`}
+      />
     </div>
   );
 };
