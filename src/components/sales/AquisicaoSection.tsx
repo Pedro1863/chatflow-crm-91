@@ -88,7 +88,13 @@ const AquisicaoSection = () => {
   return (
     <div className="space-y-4">
       <SectionHeader icon={UserPlus} title="Aquisição">
-        <DateFilter value={dateRange} onChange={setDateRange} />
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowTemplate(true)}>
+            <Send className="h-3.5 w-3.5 mr-1.5" />
+            Enviar Template
+          </Button>
+          <DateFilter value={dateRange} onChange={setDateRange} />
+        </div>
       </SectionHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
