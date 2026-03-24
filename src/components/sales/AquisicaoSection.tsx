@@ -213,7 +213,7 @@ const AquisicaoSection = () => {
       <TemplateSendDialog
         open={showTemplate}
         onOpenChange={setShowTemplate}
-        customers={customers}
+        customers={filteredCustomers}
         templateName="template_aquisicao"
         templateLabel="Aquisição"
       />
