@@ -107,7 +107,7 @@ const RetencaoSection = () => {
   };
   customersNoPeriodo.forEach((c) => {
     const lastOrder = lastOrderByCustomer.get(c.id) || null;
-    const health = classifyHealth(lastOrder, dateRange.to);
+    const health = classifyHealth(lastOrder, referenciaHealth);
     healthMap[health]++;
     customersByHealth[health].push(c);
   });
