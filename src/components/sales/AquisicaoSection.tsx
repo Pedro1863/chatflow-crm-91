@@ -209,6 +209,14 @@ const AquisicaoSection = () => {
           </CardContent>
         </Card>
       )}
+
+      <TemplateSendDialog
+        open={showTemplate}
+        onOpenChange={setShowTemplate}
+        customers={customers}
+        templateName="template_aquisicao"
+        templateLabel="Aquisição"
+      />
     </div>
   );
 };

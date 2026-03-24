@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useCustomers, useOrders, useChurnMensal } from "@/hooks/use-sales-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import TemplateSendDialog from "./TemplateSendDialog";
+import RetencaoAudienceDialog from "./RetencaoAudienceDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
