@@ -97,7 +97,9 @@ const RetencaoSection = () => {
     }
   });
 
-  // Health classification relative to the END of the selected period
+  // Health classification relative to the END of the selected period or TODAY (whichever is earlier)
+  const hoje = new Date();
+  const referenciaHealth = dateRange.to > hoje ? hoje : dateRange.to;
   const totalCustomers = customersNoPeriodo.length;
   const healthMap = { saudavel: 0, em_risco: 0, inativo: 0 };
   const customersByHealth: Record<"saudavel" | "em_risco" | "inativo", typeof customersNoPeriodo> = {
@@ -105,7 +107,7 @@ const RetencaoSection = () => {
   };
   customersNoPeriodo.forEach((c) => {
     const lastOrder = lastOrderByCustomer.get(c.id) || null;
-    const health = classifyHealth(lastOrder, dateRange.to);
+    const health = classifyHealth(lastOrder, referenciaHealth);
     healthMap[health]++;
     customersByHealth[health].push(c);
   });
@@ -160,7 +162,7 @@ const RetencaoSection = () => {
             <div className="space-y-2 pr-4">
               {activeModal && customersByHealth[activeModal].map((c) => {
                 const lastOrder = lastOrderByCustomer.get(c.id) || null;
-                const days = lastOrder ? differenceInDays(dateRange.to, new Date(lastOrder)) : null;
+                const days = lastOrder ? differenceInDays(referenciaHealth, new Date(lastOrder)) : null;
                 return (
                   <div key={c.id} className="rounded-md border bg-muted/30 p-3 flex justify-between items-center">
                     <div>
