@@ -149,6 +149,10 @@ const RetencaoSection = () => {
         <div className="flex items-center gap-2">
           {churnIncreasing && <AlertBadge level="danger" message="Churn em alta" />}
           {riscoAlto && <AlertBadge level="warning" message="Muitos clientes em risco" />}
+          <Button size="sm" variant="outline" onClick={() => setShowAudience(true)}>
+            <Send className="h-3.5 w-3.5 mr-1.5" />
+            Enviar Template
+          </Button>
           <DateFilter value={dateRange} onChange={setDateRange} />
         </div>
       </SectionHeader>
