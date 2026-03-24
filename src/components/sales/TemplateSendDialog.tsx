@@ -331,7 +331,7 @@ export default function TemplateSendDialog({
               </p>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
