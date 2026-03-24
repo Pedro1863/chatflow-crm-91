@@ -97,7 +97,9 @@ const RetencaoSection = () => {
     }
   });
 
-  // Health classification relative to the END of the selected period
+  // Health classification relative to the END of the selected period or TODAY (whichever is earlier)
+  const hoje = new Date();
+  const referenciaHealth = dateRange.to > hoje ? hoje : dateRange.to;
   const totalCustomers = customersNoPeriodo.length;
   const healthMap = { saudavel: 0, em_risco: 0, inativo: 0 };
   const customersByHealth: Record<"saudavel" | "em_risco" | "inativo", typeof customersNoPeriodo> = {
