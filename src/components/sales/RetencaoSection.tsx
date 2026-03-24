@@ -65,6 +65,13 @@ const RetencaoSection = () => {
   const { data: churnData = [], isLoading: loadingChurn } = useChurnMensal(mesesDesdeMarco2026());
   const [dateRange, setDateRange] = useState<DateRange>(defaultRange);
   const [activeModal, setActiveModal] = useState<"saudavel" | "em_risco" | "inativo" | null>(null);
+  const [showAudience, setShowAudience] = useState(false);
+  const [templateState, setTemplateState] = useState<{
+    open: boolean;
+    template: string;
+    label: string;
+    audienceKey: string;
+  }>({ open: false, template: "", label: "", audienceKey: "" });
 
   if (loadingC || loadingChurn) {
     return (
