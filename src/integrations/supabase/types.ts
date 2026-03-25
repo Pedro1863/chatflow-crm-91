@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_settings: {
+        Row: {
+          enabled: boolean
+          id: string
+          updated_at: string
+          zone: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          zone: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          zone?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           conversion_probability:
@@ -147,6 +168,47 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_zone_tracking: {
+        Row: {
+          created_at: string
+          current_zone: string
+          customer_id: string
+          id: string
+          template_sent: boolean
+          template_sent_at: string | null
+          updated_at: string
+          zone_entered_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_zone?: string
+          customer_id: string
+          id?: string
+          template_sent?: boolean
+          template_sent_at?: string | null
+          updated_at?: string
+          zone_entered_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_zone?: string
+          customer_id?: string
+          id?: string
+          template_sent?: boolean
+          template_sent_at?: string | null
+          updated_at?: string
+          zone_entered_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_zone_tracking_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: true
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
