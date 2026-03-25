@@ -245,6 +245,12 @@ serve(async (req) => {
         })
         .eq("customer_id", pending.customer_id);
 
+      // Log success
+      await supabase.from("logs_envio_template").insert({
+        customer_id: pending.customer_id, telefone: phone,
+        template_name: templateName, status: "sucesso",
+      });
+
       sentCount++;
       results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "sent" });
     }
