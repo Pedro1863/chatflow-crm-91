@@ -138,7 +138,9 @@ export function useSendMensagem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (msg: { contato_id: string; telefone: string; mensagem: string; vendedor?: string }) => {
-      const webhookUrl = getN8nWebhookUrl();
+      // Get webhook URL from DB
+      const { getWebhookUrlFromDb } = await import("@/hooks/use-system-settings");
+      const webhookUrl = await getWebhookUrlFromDb();
       if (!webhookUrl) {
         throw new Error("URL do webhook n8n não configurada. Vá em Configurações para definir.");
       }

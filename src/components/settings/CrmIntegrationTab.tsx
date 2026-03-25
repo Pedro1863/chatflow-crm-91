@@ -20,43 +20,7 @@ const CrmIntegrationTab = () => {
       {/* Webhook URL centralizada */}
       <WebhookSettingsCard />
 
-      {/* Webhook n8n - Envio de mensagens */}
-      <Card className="border-primary/30">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Webhook className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Webhook n8n - Enviar Mensagens</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            URL do webhook do n8n que será chamado quando o vendedor enviar uma mensagem pelo chat.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              placeholder="https://seu-n8n.com/webhook/enviar-mensagem"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={handleSaveWebhook} size="sm" className="gap-1.5">
-              <Save className="h-4 w-4" />
-              Salvar
-            </Button>
-          </div>
-          <div className="bg-muted rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">Payload enviado pelo dashboard</p>
-            <pre className="text-xs text-foreground whitespace-pre-wrap">
-{`{
-  "telefone": "+5511999999999",
-  "mensagem": "Texto da mensagem"
-}`}
-            </pre>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Webhook principal */}
+      {/* Webhook principal - Receber Mensagens */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
