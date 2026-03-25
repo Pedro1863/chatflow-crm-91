@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import TemplateSendDialog from "./TemplateSendDialog";
 import RetencaoAudienceDialog from "./RetencaoAudienceDialog";
+import AutomationControls from "./AutomationControls";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import {
