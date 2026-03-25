@@ -186,6 +186,8 @@ serve(async (req) => {
       // Send via n8n webhook if URL provided
       if (webhookUrl) {
         try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 5000);
           const sendUrl = webhookUrl.replace(/\/$/, "") + "/webhook/send-template";
           const res = await fetch(sendUrl, {
             method: "POST",
@@ -196,14 +198,29 @@ serve(async (req) => {
               template: templateName,
               variaveis: [pending.nome],
             }),
+            signal: controller.signal,
           });
+          clearTimeout(timer);
 
           if (!res.ok) {
+            const errText = await res.text().catch(() => `HTTP ${res.status}`);
+            const errorMsg = `HTTP ${res.status}: ${errText.slice(0, 200)}`;
+            await supabase.from("logs_envio_template").insert({
+              customer_id: pending.customer_id, telefone: phone,
+              template_name: templateName, status: "erro", erro: errorMsg,
+            });
             failCount++;
             results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_failed" });
             continue;
           }
-        } catch (err) {
+        } catch (err: any) {
+          const errorMsg = err.name === "AbortError"
+            ? "Timeout: servidor não respondeu em 5s"
+            : err.message || "Erro desconhecido";
+          await supabase.from("logs_envio_template").insert({
+            customer_id: pending.customer_id, telefone: phone,
+            template_name: templateName, status: "erro", erro: errorMsg,
+          });
           failCount++;
           results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_error" });
           continue;
