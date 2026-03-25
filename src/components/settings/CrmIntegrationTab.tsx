@@ -1,25 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Webhook, Key, Globe, BookOpen, ArrowRight, Save } from "lucide-react";
+import { Webhook, Key, Globe, BookOpen, ArrowRight } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { toast } from "sonner";
-import { getN8nWebhookUrl, setN8nWebhookUrl } from "@/hooks/use-crm-data";
 import OrderImportCard from "./OrderImportCard";
 import ContactImportCard from "./ContactImportCard";
+import WebhookSettingsCard from "./WebhookSettingsCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const CrmIntegrationTab = () => {
-  const [webhookUrl, setWebhookUrl] = useState(getN8nWebhookUrl());
-
-  const handleSaveWebhook = () => {
-    setN8nWebhookUrl(webhookUrl);
-    toast.success("URL do webhook salva com sucesso!");
-  };
-
   return (
     <div className="space-y-6">
       {/* Importação de pedidos */}
@@ -27,6 +16,9 @@ const CrmIntegrationTab = () => {
 
       {/* Importação de contatos */}
       <ContactImportCard />
+
+      {/* Webhook URL centralizada */}
+      <WebhookSettingsCard />
 
       {/* Webhook n8n - Envio de mensagens */}
       <Card className="border-primary/30">
