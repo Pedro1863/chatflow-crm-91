@@ -171,8 +171,25 @@ const WebhookSettingsCard = () => {
           </pre>
         </div>
 
-        <div className="bg-muted rounded-lg p-3 space-y-2">
-          <p className="text-xs font-medium text-foreground">Templates por zona (automação)</p>
+        <div className="bg-muted rounded-lg p-3 space-y-3">
+          <p className="text-xs font-medium text-foreground">Templates — Envio Manual</p>
+          <div className="space-y-1.5">
+            {[
+              { zone: "Aquisição — Novos Clientes", template: "template_aquisicao", color: "text-chart-2" },
+              { zone: "Retenção — Ativos", template: "template_retencao_ativos", color: "text-primary" },
+              { zone: "Retenção — Em Risco", template: "template_retencao_risco", color: "text-chart-3" },
+              { zone: "Retenção — Inativos", template: "template_retencao_inativos", color: "text-destructive" },
+            ].map((item) => (
+              <div key={item.template} className="flex items-center justify-between">
+                <span className={`text-xs font-medium ${item.color}`}>{item.zone}</span>
+                <code className="text-xs text-foreground bg-background px-2 py-0.5 rounded border">{item.template}</code>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-border pt-3">
+            <p className="text-xs font-medium text-foreground">Templates — Automação Diária</p>
+          </div>
           <div className="space-y-1.5">
             {[
               { zone: "Saudáveis / Ativos", template: "template_saudaveis", color: "text-primary" },
@@ -185,8 +202,9 @@ const WebhookSettingsCard = () => {
               </div>
             ))}
           </div>
+
           <p className="text-[10px] text-muted-foreground">
-            Esses nomes devem corresponder aos templates configurados no n8n.
+            Esses nomes devem corresponder aos templates configurados no n8n. Endpoint: <code className="text-foreground">/webhook/send-template</code>
           </p>
         </div>
       </CardContent>
