@@ -306,6 +306,44 @@ export type Database = {
         }
         Relationships: []
       }
+      logs_envio_template: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          erro: string | null
+          id: string
+          status: string
+          telefone: string
+          template_name: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          erro?: string | null
+          id?: string
+          status?: string
+          telefone: string
+          template_name: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          erro?: string | null
+          id?: string
+          status?: string
+          telefone?: string
+          template_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_envio_template_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mensagens: {
         Row: {
           contato_id: string

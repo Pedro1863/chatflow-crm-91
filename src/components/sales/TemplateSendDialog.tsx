@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle,
@@ -20,11 +19,15 @@ import {
   Loader2,
   Pencil,
   Save,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   normalizePhone,
   getPhoneStatus,
   type PhoneStatus,
+  type SendResult,
   useTodaySends,
   useUpdateCustomerPhone,
   useSendTemplates,
@@ -68,13 +71,16 @@ export default function TemplateSendDialog({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
+  const [sendResults, setSendResults] = useState<SendResult[] | null>(null);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
 
-  // Reset selections when dialog opens
   useEffect(() => {
     if (open) {
       setSelected(new Set());
       setEditingId(null);
       setShowConfirm(false);
+      setSendResults(null);
+      setShowErrorDetails(false);
     }
   }, [open]);
 
@@ -134,19 +140,125 @@ export default function TemplateSendDialog({
   );
 
   const handleSend = async () => {
-    await sendTemplates.mutateAsync({
-      contacts: selectedContacts.map((c) => ({
-        customer_id: c.id,
-        telefone: c.normalizedPhone,
-        nome: c.nome,
-      })),
-      template: templateName,
-      webhookPath,
-    });
+    try {
+      const results = await sendTemplates.mutateAsync({
+        contacts: selectedContacts.map((c) => ({
+          customer_id: c.id,
+          telefone: c.normalizedPhone,
+          nome: c.nome,
+        })),
+        template: templateName,
+        webhookPath,
+      });
+      setSendResults(results);
+
+      const ok = results.filter((r) => r.success).length;
+      const fail = results.filter((r) => !r.success).length;
+      if (ok > 0 && fail === 0) toast.success(`${ok} template(s) enviado(s) com sucesso`);
+      else if (ok > 0 && fail > 0) toast.warning(`${ok} enviado(s), ${fail} falharam`);
+      else if (fail > 0) toast.error(`Todos os ${fail} envio(s) falharam`);
+    } catch (err: any) {
+      if (err.message === "WEBHOOK_NOT_CONFIGURED") {
+        toast.error("Webhook não configurado. Vá em Configurações para definir a URL.");
+      } else {
+        toast.error("Erro inesperado no envio.");
+      }
+      setSendResults(null);
+    }
     setShowConfirm(false);
-    onOpenChange(false);
   };
 
+  // Results screen
+  if (sendResults) {
+    const successes = sendResults.filter((r) => r.success);
+    const failures = sendResults.filter((r) => !r.success);
+
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Resultado do Envio</DialogTitle>
+            <DialogDescription>
+              {successes.length} enviado(s) com sucesso, {failures.length} falha(s)
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            {/* Success summary */}
+            {successes.length > 0 && (
+              <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 dark:border-emerald-800 p-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                    {successes.length} envio(s) com sucesso
+                  </p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    Templates enviados e registrados
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Failures */}
+            {failures.length > 0 && (
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+                <button
+                  onClick={() => setShowErrorDetails(!showErrorDetails)}
+                  className="flex items-center justify-between w-full"
+                >
+                  <div className="flex items-center gap-2">
+                    <XCircle className="h-5 w-5 text-destructive shrink-0" />
+                    <div className="text-left">
+                      <p className="text-sm font-medium text-destructive">
+                        {failures.length} envio(s) falharam
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Clique para ver detalhes
+                      </p>
+                    </div>
+                  </div>
+                  {showErrorDetails ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+
+                {showErrorDetails && (
+                  <div className="space-y-1.5 pt-2 border-t border-destructive/20 max-h-[30vh] overflow-y-auto">
+                    {failures.map((f, i) => (
+                      <div
+                        key={i}
+                        className="rounded border border-border bg-background p-2 space-y-0.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-medium text-foreground">
+                            {f.nome || "Sem nome"}
+                          </p>
+                          <span className="text-[10px] text-muted-foreground font-mono">
+                            {f.telefone}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-destructive break-all">
+                          {f.error || "Erro desconhecido"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => onOpenChange(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Confirm screen
   if (showConfirm) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -200,6 +312,7 @@ export default function TemplateSendDialog({
     );
   }
 
+  // Main contact list screen
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
@@ -210,7 +323,6 @@ export default function TemplateSendDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Summary badges */}
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline" className="gap-1">
             Total: {contactList.length}
@@ -230,7 +342,6 @@ export default function TemplateSendDialog({
           )}
         </div>
 
-        {/* Select all */}
         <div className="flex items-center gap-2 border-b border-border pb-2">
           <Checkbox
             checked={validContacts.length > 0 && selected.size === validContacts.length}
@@ -241,7 +352,6 @@ export default function TemplateSendDialog({
           </span>
         </div>
 
-        {/* Contact list */}
         <div className="flex-1 min-h-0 max-h-[45vh] overflow-y-auto -mx-6 px-6">
           <div className="space-y-1.5 py-1">
             {contactList.map((c) => {
