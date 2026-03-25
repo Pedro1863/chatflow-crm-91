@@ -170,6 +170,25 @@ const WebhookSettingsCard = () => {
 }`}
           </pre>
         </div>
+
+        <div className="bg-muted rounded-lg p-3 space-y-2">
+          <p className="text-xs font-medium text-foreground">Templates por zona (automação)</p>
+          <div className="space-y-1.5">
+            {[
+              { zone: "Saudáveis / Ativos", template: "template_saudaveis", color: "text-primary" },
+              { zone: "Em Risco", template: "template_retencao_risco", color: "text-chart-3" },
+              { zone: "Inativos", template: "template_retencao_inativos", color: "text-destructive" },
+            ].map((item) => (
+              <div key={item.template} className="flex items-center justify-between">
+                <span className={`text-xs font-medium ${item.color}`}>{item.zone}</span>
+                <code className="text-xs text-foreground bg-background px-2 py-0.5 rounded border">{item.template}</code>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Esses nomes devem corresponder aos templates configurados no n8n.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
