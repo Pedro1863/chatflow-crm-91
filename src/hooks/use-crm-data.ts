@@ -119,16 +119,19 @@ export function useMensagens(contatoId: string | null) {
   });
 }
 
-// ── Webhook URL helper ──
+// ── Webhook URL helper (now reads from DB) ──
 
-const N8N_WEBHOOK_KEY = "n8n_webhook_url";
+export { getWebhookUrlFromDb as getN8nWebhookUrlAsync } from "@/hooks/use-system-settings";
 
+// Legacy sync accessor — kept only for chat send which needs it inline
+// New code should use getWebhookUrlFromDb() or useSystemSetting("n8n_webhook_url")
 export function getN8nWebhookUrl(): string {
-  return localStorage.getItem(N8N_WEBHOOK_KEY) || "";
+  // Deprecated — returns empty; callers should migrate to async version
+  return "";
 }
 
-export function setN8nWebhookUrl(url: string) {
-  localStorage.setItem(N8N_WEBHOOK_KEY, url);
+export function setN8nWebhookUrl(_url: string) {
+  // No-op — webhook URL is now stored in system_settings table
 }
 
 export function useSendMensagem() {

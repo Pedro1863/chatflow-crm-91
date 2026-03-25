@@ -80,7 +80,7 @@ export function useSendTemplates() {
       template: string;
       webhookPath: string;
     }) => {
-      const webhookBase = getN8nWebhookUrl();
+      const webhookBase = await getWebhookUrlFromDb();
       if (!webhookBase) {
         throw new Error("URL do webhook n8n não configurada. Vá em Configurações para definir.");
       }
