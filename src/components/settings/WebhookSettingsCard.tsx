@@ -189,5 +189,9 @@ const WebhookSettingsCard = () => {
             Esses nomes devem corresponder aos templates configurados no n8n.
           </p>
         </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default WebhookSettingsCard;
