@@ -84,14 +84,14 @@ serve(async (req) => {
     const trackingMap = new Map<string, any>();
     (tracking || []).forEach((t: any) => trackingMap.set(t.customer_id, t));
 
-    // 4. Get n8n webhook URL from request body (passed by cron or manual trigger)
-    let webhookUrl = "";
-    try {
-      const body = await req.json();
-      webhookUrl = body.webhook_url || "";
-    } catch {
-      // No body provided
-    }
+    // 4. Get n8n webhook URL from system_settings table
+    const { data: webhookSetting, error: whErr } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "n8n_webhook_url")
+      .maybeSingle();
+    if (whErr) throw whErr;
+    const webhookUrl = webhookSetting?.value || "";
 
     // 5. Process each customer
     const results: { customer_id: string; zone: string; action: string }[] = [];
