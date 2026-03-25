@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getN8nWebhookUrl } from "@/hooks/use-crm-data";
+import { getWebhookUrlFromDb } from "@/hooks/use-system-settings";
 import { toast } from "sonner";
 
 export type TemplateSend = {
