@@ -67,10 +67,8 @@ export function useToggleAutomation() {
 export function useRunAutomation() {
   return useMutation({
     mutationFn: async () => {
-      const webhookUrl = localStorage.getItem("n8n_webhook_url") || "";
-      const { data, error } = await supabase.functions.invoke("retention-automation", {
-        body: { webhook_url: webhookUrl },
-      });
+      // Edge function now reads webhook URL from system_settings table directly
+      const { data, error } = await supabase.functions.invoke("retention-automation", {});
       if (error) throw error;
       return data;
     },

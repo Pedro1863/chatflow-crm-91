@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getN8nWebhookUrl } from "@/hooks/use-crm-data";
+import { getWebhookUrlFromDb } from "@/hooks/use-system-settings";
 import { toast } from "sonner";
 
 export type TemplateSend = {
@@ -80,7 +80,7 @@ export function useSendTemplates() {
       template: string;
       webhookPath: string;
     }) => {
-      const webhookBase = getN8nWebhookUrl();
+      const webhookBase = await getWebhookUrlFromDb();
       if (!webhookBase) {
         throw new Error("URL do webhook n8n não configurada. Vá em Configurações para definir.");
       }

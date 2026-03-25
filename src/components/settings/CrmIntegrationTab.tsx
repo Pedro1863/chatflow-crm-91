@@ -1,25 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Webhook, Key, Globe, BookOpen, ArrowRight, Save } from "lucide-react";
+import { Webhook, Key, Globe, BookOpen, ArrowRight } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { toast } from "sonner";
-import { getN8nWebhookUrl, setN8nWebhookUrl } from "@/hooks/use-crm-data";
 import OrderImportCard from "./OrderImportCard";
 import ContactImportCard from "./ContactImportCard";
+import WebhookSettingsCard from "./WebhookSettingsCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const CrmIntegrationTab = () => {
-  const [webhookUrl, setWebhookUrl] = useState(getN8nWebhookUrl());
-
-  const handleSaveWebhook = () => {
-    setN8nWebhookUrl(webhookUrl);
-    toast.success("URL do webhook salva com sucesso!");
-  };
-
   return (
     <div className="space-y-6">
       {/* Importação de pedidos */}
@@ -28,43 +17,10 @@ const CrmIntegrationTab = () => {
       {/* Importação de contatos */}
       <ContactImportCard />
 
-      {/* Webhook n8n - Envio de mensagens */}
-      <Card className="border-primary/30">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Webhook className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">Webhook n8n - Enviar Mensagens</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            URL do webhook do n8n que será chamado quando o vendedor enviar uma mensagem pelo chat.
-          </p>
-          <div className="flex gap-2">
-            <Input
-              placeholder="https://seu-n8n.com/webhook/enviar-mensagem"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={handleSaveWebhook} size="sm" className="gap-1.5">
-              <Save className="h-4 w-4" />
-              Salvar
-            </Button>
-          </div>
-          <div className="bg-muted rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">Payload enviado pelo dashboard</p>
-            <pre className="text-xs text-foreground whitespace-pre-wrap">
-{`{
-  "telefone": "+5511999999999",
-  "mensagem": "Texto da mensagem"
-}`}
-            </pre>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Webhook URL centralizada */}
+      <WebhookSettingsCard />
 
-      {/* Webhook principal */}
+      {/* Webhook principal - Receber Mensagens */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
