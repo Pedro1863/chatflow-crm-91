@@ -257,7 +257,7 @@ const RetencaoSection = () => {
         </Card>
       </div>
 
-      <RetencaoAudienceDialog
+      <AutomationControls />
         open={showAudience}
         onOpenChange={setShowAudience}
         onSelect={(template, label, audienceKey) => {
