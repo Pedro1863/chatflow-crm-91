@@ -13,7 +13,6 @@ const zoneConfig: Record<string, { label: string; icon: React.ElementType; templ
 export default function AutomationControls() {
   const { data: settings = [], isLoading } = useAutomationSettings();
   const toggleMutation = useToggleAutomation();
-  const runMutation = useRunAutomation();
 
   if (isLoading) {
     return (
