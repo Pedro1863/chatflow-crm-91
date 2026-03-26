@@ -233,10 +233,76 @@ Status disponíveis:
               </AccordionContent>
             </AccordionItem>
 
+            <AccordionItem value="wf-rpc">
+              <AccordionTrigger className="text-sm">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-amber-600 text-white">5</Badge>
+                  Registrar Pedido (RPC registrar_pedido)
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3 text-sm text-muted-foreground">
+                <p>Função RPC para registrar vendas. Cria ou atualiza o cliente, insere o pedido e recalcula os totais automaticamente.</p>
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-xs mb-1 font-medium">Via Supabase Client (frontend):</p>
+                  <pre className="text-xs text-foreground whitespace-pre-wrap">
+{`const { data } = await supabase.rpc("registrar_pedido", {
+  _telefone: "+5511999999999",
+  _valor_pedido: 150.00,
+  _bling_id: "12345",
+  _data_pedido: "2025-01-15T10:00:00Z",
+  _id_pedido: "PED-001",
+  _nome_cliente: "Maria Silva"
+})`}
+                  </pre>
+                </div>
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-xs mb-1 font-medium">Via HTTP (n8n / API externa):</p>
+                  <pre className="text-xs text-foreground whitespace-pre-wrap">
+{`URL: ${SUPABASE_URL}/rest/v1/rpc/registrar_pedido
+Method: POST
+Headers:
+  Content-Type: application/json
+  apikey: {SUPABASE_ANON_KEY}
+  Authorization: Bearer {SUPABASE_ANON_KEY}
+Body:
+{
+  "_telefone": "+5511999999999",
+  "_valor_pedido": 150.00,
+  "_bling_id": "12345",
+  "_data_pedido": "2025-01-15T10:00:00Z",
+  "_id_pedido": "PED-001",
+  "_nome_cliente": "Maria Silva"
+}`}
+                  </pre>
+                </div>
+                <div className="space-y-2 mt-2">
+                  <p className="text-xs font-semibold text-foreground">Parâmetros:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li><strong>_bling_id</strong> (obrigatório) — ID do contato no Bling. Usado para identificar/criar o cliente.</li>
+                    <li><strong>_telefone</strong> — Telefone do cliente. Se não informado, gera automaticamente.</li>
+                    <li><strong>_valor_pedido</strong> — Valor do pedido (default: 0).</li>
+                    <li><strong>_data_pedido</strong> — Data do pedido (default: agora).</li>
+                    <li><strong>_id_pedido</strong> — ID único do pedido. Usado para deduplicação.</li>
+                    <li><strong>_nome_cliente</strong> — Nome do cliente (atualizado se ainda não tiver).</li>
+                  </ul>
+                </div>
+                <div className="space-y-2 mt-2">
+                  <p className="text-xs font-semibold text-foreground">O que a função faz automaticamente:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Busca cliente pelo <strong>bling_id</strong>. Se não encontrar, cria um novo.</li>
+                    <li>Insere o pedido na tabela <strong>orders</strong> (com deduplicação por id_pedido).</li>
+                    <li>Recalcula <strong>total_pedidos</strong>, <strong>valor_total_comprado</strong> e <strong>data_ultimo_pedido</strong>.</li>
+                    <li>Preserva <strong>data_conversao</strong> original (não sobrescreve).</li>
+                    <li>Triggers automáticos marcam leads como convertidos na <strong>leads_pipeline</strong>.</li>
+                  </ul>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
             <AccordionItem value="wf5">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-red-600 text-white">5</Badge>
+                  <Badge className="bg-red-600 text-white">6</Badge>
                   Enviar mensagens pelo dashboard
                 </div>
               </AccordionTrigger>
