@@ -111,6 +111,7 @@ const CrmIntegrationTab = () => {
         </CardHeader>
         <CardContent>
           <Accordion type="multiple" className="w-full">
+            {/* WF1 - Receber mensagens */}
             <AccordionItem value="wf1">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
@@ -150,22 +151,35 @@ Body:
 }`}
                   </pre>
                 </div>
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <p className="text-xs font-medium text-foreground mb-1">O que a Edge Function faz:</p>
+                  <ul className="list-disc list-inside text-xs space-y-1">
+                    <li>Busca contato pelo telefone. Se não existir, cria automaticamente.</li>
+                    <li>Salva a mensagem na tabela <strong>mensagens</strong>.</li>
+                    <li>Atualiza <strong>ultima_interacao</strong> do contato.</li>
+                  </ul>
+                  <p className="text-[10px] text-muted-foreground mt-2">Campos alternativos aceitos: phone, from, wa_id (telefone) | message, text, body (mensagem)</p>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
+            {/* WF2 - Criar contato */}
             <AccordionItem value="wf2">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-blue-600 text-white">2</Badge>
-                  Criar contato automaticamente
+                  Criar contato via API
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-3 text-sm text-muted-foreground">
-                <p>O webhook já cria contatos automaticamente quando recebe uma mensagem de um número novo. Mas se quiser criar manualmente:</p>
+                <p>O webhook do WF1 já cria contatos automaticamente. Use este endpoint apenas para criação manual/direta:</p>
                 <div className="bg-muted rounded-lg p-3">
                   <pre className="text-xs text-foreground whitespace-pre-wrap">
 {`URL: ${SUPABASE_URL}/functions/v1/crm-api?action=create_contato
 Method: POST
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer {SUPABASE_ANON_KEY}
 Body:
 {
   "telefone": "+5511999999999",
@@ -179,6 +193,7 @@ Body:
               </AccordionContent>
             </AccordionItem>
 
+            {/* WF3 - Atualizar status */}
             <AccordionItem value="wf3">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
@@ -187,11 +202,14 @@ Body:
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-3 text-sm text-muted-foreground">
-                <p>Use para mover contatos no funil automaticamente baseado em regras:</p>
+                <p>Mover contatos no funil automaticamente:</p>
                 <div className="bg-muted rounded-lg p-3">
                   <pre className="text-xs text-foreground whitespace-pre-wrap">
 {`URL: ${SUPABASE_URL}/functions/v1/crm-api?action=update_status
 Method: POST
+Headers:
+  Content-Type: application/json
+  Authorization: Bearer {SUPABASE_ANON_KEY}
 Body:
 {
   "contato_id": "uuid-do-contato",
@@ -199,7 +217,7 @@ Body:
 }
 
 Status disponíveis:
-- novo_lead
+- novo_lead (Sem Produto)
 - contato_iniciado
 - proposta_enviada
 - cliente`}
@@ -208,6 +226,7 @@ Status disponíveis:
               </AccordionContent>
             </AccordionItem>
 
+            {/* WF4 - Listar contatos */}
             <AccordionItem value="wf4">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
@@ -230,9 +249,11 @@ Status disponíveis:
                     <code className="text-xs text-foreground">GET ...?action=get_mensagens&contato_id=uuid</code>
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">Header obrigatório: <code className="text-foreground">Authorization: Bearer {`{SUPABASE_ANON_KEY}`}</code></p>
               </AccordionContent>
             </AccordionItem>
 
+            {/* WF5 - Registrar Pedido */}
             <AccordionItem value="wf-rpc">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
@@ -286,8 +307,8 @@ Body:
                     <li><strong>_nome_cliente</strong> — Nome do cliente (atualizado se ainda não tiver).</li>
                   </ul>
                 </div>
-                <div className="space-y-2 mt-2">
-                  <p className="text-xs font-semibold text-foreground">O que a função faz automaticamente:</p>
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <p className="text-xs font-medium text-foreground mb-1">O que a função faz automaticamente:</p>
                   <ul className="list-disc list-inside space-y-1 text-xs">
                     <li>Busca cliente pelo <strong>bling_id</strong>. Se não encontrar, cria um novo.</li>
                     <li>Insere o pedido na tabela <strong>orders</strong> (com deduplicação por id_pedido).</li>
@@ -299,52 +320,173 @@ Body:
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="wf5">
+            {/* WF6 - Enviar mensagens pelo chat */}
+            <AccordionItem value="wf6">
               <AccordionTrigger className="text-sm">
                 <div className="flex items-center gap-2">
                   <Badge className="bg-red-600 text-white">6</Badge>
-                  Enviar mensagens pelo dashboard
+                  Enviar mensagens pelo dashboard (Chat)
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-3 text-sm text-muted-foreground">
-                <p>O dashboard já envia mensagens diretamente via WhatsApp Cloud API usando a edge function <code className="text-foreground">send-whatsapp</code>. Não é necessário configurar no n8n.</p>
-                <p>Para funcionar, configure os secrets:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li><strong>WHATSAPP_TOKEN</strong> - Token da WhatsApp Cloud API (Meta Business)</li>
-                  <li><strong>WHATSAPP_PHONE_ID</strong> - ID do número de telefone no Meta Business</li>
+                <p>Quando o vendedor envia uma mensagem pelo painel de conversas, o sistema:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>Salva a mensagem na tabela <strong>mensagens</strong> (direção = saída).</li>
+                  <li>Atualiza <strong>ultima_interacao</strong> do contato.</li>
+                  <li>Envia para o webhook do <strong>n8n</strong> (URL base configurada em Configurações).</li>
                 </ul>
-                <p className="text-xs">Sem esses secrets, as mensagens são salvas no banco mas não enviadas pelo WhatsApp.</p>
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-xs mb-1 font-medium">Payload enviado ao n8n:</p>
+                  <pre className="text-xs text-foreground whitespace-pre-wrap">
+{`POST {WEBHOOK_URL_CONFIGURADA}
+{
+  "telefone": "+5511999999999",
+  "mensagem": "Texto da mensagem"
+}`}
+                  </pre>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <p className="text-xs font-medium text-foreground mb-1">⚠️ Pré-requisito:</p>
+                  <p className="text-xs">A <strong>Webhook URL (n8n)</strong> deve estar configurada na seção acima. O n8n deve ter um workflow que receba esse payload e envie a mensagem via WhatsApp (Cloud API ou Evolution API).</p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* WF7 - Envio manual de templates */}
+            <AccordionItem value="wf7">
+              <AccordionTrigger className="text-sm">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-teal-600 text-white">7</Badge>
+                  Envio manual de templates (Dashboard)
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3 text-sm text-muted-foreground">
+                <p>Disparos manuais de templates nos dashboards de Aquisição e Retenção. Usa o webhook base + <code className="text-foreground">/webhook/send-template</code>.</p>
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-xs mb-1 font-medium">Payload enviado ao n8n:</p>
+                  <pre className="text-xs text-foreground whitespace-pre-wrap">
+{`POST {WEBHOOK_URL}/webhook/send-template
+{
+  "telefone": "5511999999999",
+  "nome": "Nome do cliente",
+  "template": "template_aquisicao",
+  "variaveis": ["Nome do cliente"]
+}`}
+                  </pre>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <p className="text-xs font-medium text-foreground mb-1">Templates disponíveis (manual):</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li><strong>template_aquisicao</strong> — Aquisição → Novos Clientes</li>
+                    <li><strong>template_retencao_ativos</strong> — Retenção → Clientes Ativos</li>
+                    <li><strong>template_retencao_risco</strong> — Retenção → Em Risco</li>
+                    <li><strong>template_retencao_inativos</strong> — Retenção → Inativos</li>
+                  </ul>
+                </div>
+                <div className="space-y-1 text-xs">
+                  <p><strong>Validações:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Normalização E.164 (DDI 55)</li>
+                    <li>Deduplicação diária (tabela <strong>template_sends</strong>)</li>
+                    <li>Timeout de 5s por requisição</li>
+                    <li>Logs de sucesso/erro na tabela <strong>logs_envio_template</strong></li>
+                  </ul>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* WF8 - Automação de retenção */}
+            <AccordionItem value="wf8">
+              <AccordionTrigger className="text-sm">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-indigo-600 text-white">8</Badge>
+                  Automação de Retenção (Cron Job)
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3 text-sm text-muted-foreground">
+                <p>Edge function <code className="text-foreground">retention-automation</code> executada automaticamente <strong>todos os dias às 09:00</strong> (horário de Brasília). Também pode ser disparada manualmente pelo botão "Executar Agora" no dashboard.</p>
+
+                <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                  <p className="text-xs font-medium text-foreground mb-1">O que a automação faz:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Verifica quais zonas têm automação <strong>habilitada</strong> (tabela automation_settings).</li>
+                    <li>Classifica cada customer por saúde: <strong>saudável</strong> (≤15d), <strong>em_risco</strong> (15-30d), <strong>inativo</strong> (&gt;30d).</li>
+                    <li>Atualiza a zona na tabela <strong>customer_zone_tracking</strong>.</li>
+                    <li>Se a zona mudou ou template ainda não foi enviado, envia via webhook n8n.</li>
+                    <li>Registra em <strong>template_sends</strong> e <strong>logs_envio_template</strong>.</li>
+                  </ol>
+                </div>
+
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-xs mb-1 font-medium">Templates da automação:</p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li><strong>template_saudaveis</strong> — Clientes Saudáveis/Ativos</li>
+                    <li><strong>template_retencao_risco</strong> — Clientes Em Risco</li>
+                    <li><strong>template_retencao_inativos</strong> — Clientes Inativos</li>
+                  </ul>
+                </div>
+
+                <div className="bg-muted rounded-lg p-3">
+                  <p className="text-xs mb-1 font-medium">Endpoint para execução manual:</p>
+                  <pre className="text-xs text-foreground whitespace-pre-wrap">
+{`POST ${SUPABASE_URL}/functions/v1/retention-automation
+Headers:
+  Authorization: Bearer {SUPABASE_ANON_KEY}`}
+                  </pre>
+                </div>
+
+                <div className="space-y-1 text-xs">
+                  <p><strong>Controles:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>ON/OFF por zona no dashboard (Saudáveis, Em Risco, Inativos)</li>
+                    <li>Deduplicação diária automática</li>
+                    <li>Validação de telefone E.164</li>
+                    <li>Usa mesma Webhook URL configurada na seção de Configurações</li>
+                  </ul>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </CardContent>
       </Card>
 
-      {/* WhatsApp Cloud API */}
+      {/* Configuração do n8n - Workflow de envio */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-primary" />
-            <CardTitle className="text-base">WhatsApp Cloud API</CardTitle>
+            <CardTitle className="text-base">Configuração do n8n — Workflows necessários</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Para enviar mensagens diretamente pelo dashboard, configure os secrets no Lovable Cloud:
+            Para que o sistema funcione corretamente, o n8n precisa de dois workflows:
           </p>
-          <div className="space-y-2">
-            <div className="bg-muted rounded-lg p-3">
-              <p className="text-xs font-medium text-foreground">WHATSAPP_TOKEN</p>
-              <p className="text-xs text-muted-foreground">Token de acesso permanente da Meta Business API</p>
-            </div>
-            <div className="bg-muted rounded-lg p-3">
-              <p className="text-xs font-medium text-foreground">WHATSAPP_PHONE_ID</p>
-              <p className="text-xs text-muted-foreground">ID do número de telefone registrado no Meta Business</p>
-            </div>
+
+          <div className="bg-muted rounded-lg p-4 space-y-2">
+            <p className="text-xs font-semibold text-foreground">1. Workflow: Enviar mensagem do chat</p>
+            <p className="text-xs text-muted-foreground">Recebe o payload do dashboard (telefone + mensagem) e envia via WhatsApp Cloud API ou Evolution API.</p>
+            <p className="text-xs text-muted-foreground">
+              <strong>Trigger:</strong> Webhook no n8n apontando para a URL base configurada nas Configurações.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Obtenha em: <code className="text-foreground">developers.facebook.com → WhatsApp → API Setup</code>
-          </p>
+
+          <div className="bg-muted rounded-lg p-4 space-y-2">
+            <p className="text-xs font-semibold text-foreground">2. Workflow: Enviar template</p>
+            <p className="text-xs text-muted-foreground">Recebe o payload de templates (telefone, nome, template, variaveis) e envia o template via WhatsApp.</p>
+            <p className="text-xs text-muted-foreground">
+              <strong>Trigger:</strong> Webhook no n8n na rota <code className="text-foreground">/webhook/send-template</code> (URL base + /webhook/send-template).
+            </p>
+            <pre className="text-xs text-foreground whitespace-pre-wrap bg-background rounded p-2 border mt-1">
+{`Payload recebido:
+{
+  "telefone": "5511999999999",
+  "nome": "Nome do cliente",
+  "template": "template_aquisicao",
+  "variaveis": ["Nome do cliente"]
+}`}
+            </pre>
+          </div>
         </CardContent>
       </Card>
     </div>
