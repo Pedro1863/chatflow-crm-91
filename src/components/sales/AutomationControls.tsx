@@ -36,11 +36,27 @@ export default function AutomationControls() {
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Automação de Retenção
           </CardTitle>
-          {anyEnabled && (
-            <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 text-[10px]">
-              ATIVA
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {anyEnabled && (
+              <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 text-[10px]">
+                ATIVA
+              </Badge>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!anyEnabled || runMutation.isPending}
+              onClick={() => runMutation.mutate()}
+              className="h-7 text-xs"
+            >
+              {runMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Play className="h-3 w-3 mr-1" />
+              )}
+              Executar Agora
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
