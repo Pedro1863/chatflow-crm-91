@@ -1,9 +1,8 @@
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { HeartPulse, AlertTriangle, UserX, Play, Loader2 } from "lucide-react";
-import { useAutomationSettings, useToggleAutomation, useRunAutomation } from "@/hooks/use-automation-settings";
+import { HeartPulse, AlertTriangle, UserX, Loader2 } from "lucide-react";
+import { useAutomationSettings, useToggleAutomation } from "@/hooks/use-automation-settings";
 
 const zoneConfig: Record<string, { label: string; icon: React.ElementType; template: string; color: string }> = {
   saudavel: { label: "Saudáveis", icon: HeartPulse, template: "template_saudaveis", color: "text-primary" },
