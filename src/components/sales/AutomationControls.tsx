@@ -1,8 +1,9 @@
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { HeartPulse, AlertTriangle, UserX, Loader2 } from "lucide-react";
-import { useAutomationSettings, useToggleAutomation } from "@/hooks/use-automation-settings";
+import { HeartPulse, AlertTriangle, UserX, Play, Loader2 } from "lucide-react";
+import { useAutomationSettings, useToggleAutomation, useRunAutomation } from "@/hooks/use-automation-settings";
 
 const zoneConfig: Record<string, { label: string; icon: React.ElementType; template: string; color: string }> = {
   saudavel: { label: "Saudáveis", icon: HeartPulse, template: "template_saudaveis", color: "text-primary" },
@@ -13,6 +14,7 @@ const zoneConfig: Record<string, { label: string; icon: React.ElementType; templ
 export default function AutomationControls() {
   const { data: settings = [], isLoading } = useAutomationSettings();
   const toggleMutation = useToggleAutomation();
+  const runMutation = useRunAutomation();
 
   if (isLoading) {
     return (
@@ -34,11 +36,27 @@ export default function AutomationControls() {
           <CardTitle className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Automação de Retenção
           </CardTitle>
-          {anyEnabled && (
-            <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 text-[10px]">
-              ATIVA
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {anyEnabled && (
+              <Badge variant="outline" className="text-primary border-primary/30 bg-primary/5 text-[10px]">
+                ATIVA
+              </Badge>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!anyEnabled || runMutation.isPending}
+              onClick={() => runMutation.mutate()}
+              className="h-7 text-xs"
+            >
+              {runMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Play className="h-3 w-3 mr-1" />
+              )}
+              Executar Agora
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
