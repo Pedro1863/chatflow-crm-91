@@ -29,8 +29,10 @@ export type Mensagem = {
 function useRealtimeInvalidation(table: string, queryKey: string[]) {
   const qc = useQueryClient();
   const keyStr = queryKey.join("-");
+  const idRef = useRef(0);
   useEffect(() => {
-    const channelName = `realtime-${table}-${keyStr}-${Date.now()}`;
+    idRef.current += 1;
+    const channelName = `rt-${table}-${keyStr}-${idRef.current}`;
     const channel = supabase
       .channel(channelName)
       .on(
