@@ -30,9 +30,11 @@ export type LeadPipeline = {
 
 function useRealtimeInvalidation(table: string, queryKey: string[]) {
   const qc = useQueryClient();
+  const keyStr = queryKey.join("-");
   useEffect(() => {
+    const channelName = `realtime-${table}-${keyStr}-${Date.now()}`;
     const channel = supabase
-      .channel(`realtime-${table}-${queryKey.join("-")}`)
+      .channel(channelName)
       .on("postgres_changes", { event: "*", schema: "public", table }, () => {
         qc.invalidateQueries({ queryKey });
       })
@@ -40,7 +42,8 @@ function useRealtimeInvalidation(table: string, queryKey: string[]) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [table, queryKey.join("-"), qc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [table, keyStr]);
 }
 
 export function useCustomers() {
