@@ -31,7 +31,7 @@ export type LeadPipeline = {
 function useRealtimeInvalidation(table: string, queryKey: string[]) {
   const qc = useQueryClient();
   const keyStr = queryKey.join("-");
-  const idRef = React.useRef(0);
+  const idRef = useRef(0);
   useEffect(() => {
     idRef.current += 1;
     const channelName = `rt-${table}-${keyStr}-${idRef.current}`;
