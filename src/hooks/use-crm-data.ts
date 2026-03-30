@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 export type Contato = {
   id: string;
@@ -29,10 +29,9 @@ export type Mensagem = {
 function useRealtimeInvalidation(table: string, queryKey: string[]) {
   const qc = useQueryClient();
   const keyStr = queryKey.join("-");
-  const idRef = useRef(0);
+
   useEffect(() => {
-    idRef.current += 1;
-    const channelName = `rt-${table}-${keyStr}-${idRef.current}`;
+    const channelName = `rt-${table}-${keyStr}-${crypto.randomUUID()}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -43,6 +42,7 @@ function useRealtimeInvalidation(table: string, queryKey: string[]) {
         }
       )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
