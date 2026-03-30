@@ -210,7 +210,11 @@ export function InactivityPopup() {
             markPopupShown.mutate({ telefone: currentItem.telefone, leadId: data.id });
           }
           toast.success(`Tentativa registrada para ${currentItem.nome || currentItem.telefone}`);
-          setProcessedPhones((prev) => new Set(prev).add(currentItem.telefone));
+          setProcessedPhones((prev) => {
+                    const next = new Set(prev).add(currentItem.telefone);
+                    sessionStorage.setItem("inactivity_popup_processed", JSON.stringify({ phones: [...next], ts: Date.now() }));
+                    return next;
+                  });
           qc.invalidateQueries({ queryKey: ["leads_pipeline_all"] });
           if (currentIndex < total - 1) {
             setCurrentIndex((i) => i + 1);
