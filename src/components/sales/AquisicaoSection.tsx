@@ -213,7 +213,12 @@ const AquisicaoSection = () => {
       <TemplateSendDialog
         open={showTemplate}
         onOpenChange={setShowTemplate}
-        customers={filteredCustomers}
+        customers={customers.filter((c) => {
+          if (!c.data_conversao) return false;
+          const d = new Date(c.data_conversao);
+          const now = new Date();
+          return d >= startOfMonth(now) && d <= endOfMonth(now);
+        })}
         templateName="template_aquisicao"
         templateLabel="Aquisição"
       />

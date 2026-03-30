@@ -270,11 +270,25 @@ const RetencaoSection = () => {
       <TemplateSendDialog
         open={templateState.open}
         onOpenChange={(open) => setTemplateState((s) => ({ ...s, open }))}
-        customers={
-          templateState.audienceKey
-            ? customersByHealth[templateState.audienceKey as "saudavel" | "em_risco" | "inativo"] || []
-            : []
-        }
+        customers={(() => {
+          if (!templateState.audienceKey) return [];
+          // Templates always use real-time data (today), independent of date filter
+          const hoje = new Date();
+          const limite90 = new Date(hoje);
+          limite90.setDate(limite90.getDate() - 90);
+          const realtimeCustomers = customers.filter((c) => {
+            if (!c.data_conversao) return false;
+            const ultimoPedido = c.data_ultimo_pedido ? new Date(c.data_ultimo_pedido) : null;
+            const conversao = new Date(c.data_conversao);
+            return (ultimoPedido && ultimoPedido >= limite90) || (conversao >= startOfMonth(hoje) && conversao <= endOfMonth(hoje));
+          });
+          const realtimeHealth: Record<string, typeof customers> = { saudavel: [], em_risco: [], inativo: [] };
+          realtimeCustomers.forEach((c) => {
+            const health = classifyHealth(c.data_ultimo_pedido, hoje);
+            realtimeHealth[health]?.push(c);
+          });
+          return realtimeHealth[templateState.audienceKey] || [];
+        })()}
         templateName={templateState.template}
         templateLabel={`Retenção - ${templateState.label}`}
       />
