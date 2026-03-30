@@ -98,8 +98,20 @@ export function InactivityPopup() {
   const qc = useQueryClient();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
-  const [processedPhones, setProcessedPhones] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState(() => {
+    const stored = sessionStorage.getItem("inactivity_popup_dismissed");
+    if (!stored) return false;
+    // Auto-expire after 4 hours
+    const { ts } = JSON.parse(stored);
+    return Date.now() - ts < INACTIVITY_MS;
+  });
+  const [processedPhones, setProcessedPhones] = useState<Set<string>>(() => {
+    const stored = sessionStorage.getItem("inactivity_popup_processed");
+    if (!stored) return new Set();
+    const { phones, ts } = JSON.parse(stored);
+    if (Date.now() - ts > INACTIVITY_MS) return new Set();
+    return new Set(phones);
+  });
 
   // Build queue: only contacts that qualify as fallback
   const queue = useMemo<QueueItem[]>(() => {
