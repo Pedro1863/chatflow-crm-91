@@ -98,8 +98,20 @@ export function InactivityPopup() {
   const qc = useQueryClient();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
-  const [processedPhones, setProcessedPhones] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState(() => {
+    const stored = sessionStorage.getItem("inactivity_popup_dismissed");
+    if (!stored) return false;
+    // Auto-expire after 4 hours
+    const { ts } = JSON.parse(stored);
+    return Date.now() - ts < INACTIVITY_MS;
+  });
+  const [processedPhones, setProcessedPhones] = useState<Set<string>>(() => {
+    const stored = sessionStorage.getItem("inactivity_popup_processed");
+    if (!stored) return new Set();
+    const { phones, ts } = JSON.parse(stored);
+    if (Date.now() - ts > INACTIVITY_MS) return new Set();
+    return new Set(phones);
+  });
 
   // Build queue: only contacts that qualify as fallback
   const queue = useMemo<QueueItem[]>(() => {
@@ -198,12 +210,17 @@ export function InactivityPopup() {
             markPopupShown.mutate({ telefone: currentItem.telefone, leadId: data.id });
           }
           toast.success(`Tentativa registrada para ${currentItem.nome || currentItem.telefone}`);
-          setProcessedPhones((prev) => new Set(prev).add(currentItem.telefone));
+          setProcessedPhones((prev) => {
+                    const next = new Set(prev).add(currentItem.telefone);
+                    sessionStorage.setItem("inactivity_popup_processed", JSON.stringify({ phones: [...next], ts: Date.now() }));
+                    return next;
+                  });
           qc.invalidateQueries({ queryKey: ["leads_pipeline_all"] });
           if (currentIndex < total - 1) {
             setCurrentIndex((i) => i + 1);
           } else {
             setDismissed(true);
+            sessionStorage.setItem("inactivity_popup_dismissed", JSON.stringify({ ts: Date.now() }));
           }
         },
         onError: () => toast.error("Erro ao registrar tentativa"),
@@ -216,10 +233,14 @@ export function InactivityPopup() {
       setCurrentIndex((i) => i + 1);
     } else {
       setDismissed(true);
+      sessionStorage.setItem("inactivity_popup_dismissed", JSON.stringify({ ts: Date.now() }));
     }
   };
 
-  const handleDismissAll = () => setDismissed(true);
+  const handleDismissAll = () => {
+    setDismissed(true);
+    sessionStorage.setItem("inactivity_popup_dismissed", JSON.stringify({ ts: Date.now() }));
+  };
 
   if (!isOpen) return null;
 
