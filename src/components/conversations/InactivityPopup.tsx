@@ -220,6 +220,7 @@ export function InactivityPopup() {
             setCurrentIndex((i) => i + 1);
           } else {
             setDismissed(true);
+            sessionStorage.setItem("inactivity_popup_dismissed", JSON.stringify({ ts: Date.now() }));
           }
         },
         onError: () => toast.error("Erro ao registrar tentativa"),
