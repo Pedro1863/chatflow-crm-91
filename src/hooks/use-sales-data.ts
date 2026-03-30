@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 export type Customer = {
   id: string;
@@ -31,16 +31,16 @@ export type LeadPipeline = {
 function useRealtimeInvalidation(table: string, queryKey: string[]) {
   const qc = useQueryClient();
   const keyStr = queryKey.join("-");
-  const idRef = useRef(0);
+
   useEffect(() => {
-    idRef.current += 1;
-    const channelName = `rt-${table}-${keyStr}-${idRef.current}`;
+    const channelName = `rt-${table}-${keyStr}-${crypto.randomUUID()}`;
     const channel = supabase
       .channel(channelName)
       .on("postgres_changes", { event: "*", schema: "public", table }, () => {
         qc.invalidateQueries({ queryKey });
       })
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
