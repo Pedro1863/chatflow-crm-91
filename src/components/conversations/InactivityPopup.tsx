@@ -231,7 +231,10 @@ export function InactivityPopup() {
     }
   };
 
-  const handleDismissAll = () => setDismissed(true);
+  const handleDismissAll = () => {
+    setDismissed(true);
+    sessionStorage.setItem("inactivity_popup_dismissed", JSON.stringify({ ts: Date.now() }));
+  };
 
   if (!isOpen) return null;
 
