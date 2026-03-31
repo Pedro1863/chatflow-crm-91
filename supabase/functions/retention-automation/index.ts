@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isValidBrazilPhoneE164, normalizeBrazilPhoneE164 } from "../_shared/phone.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,21 +15,6 @@ function classifyHealth(lastOrderDate: string | null, referenceDate: Date): "sau
   if (days <= 15) return "saudavel";
   if (days <= 30) return "em_risco";
   return "inativo";
-}
-
-// E.164 BR phone validation
-function normalizePhone(raw: string | null | undefined): string {
-  if (!raw) return "";
-  let digits = raw.replace(/[^0-9]/g, "");
-  if (digits.length >= 10 && !digits.startsWith("55")) {
-    digits = "55" + digits;
-  }
-  return digits;
-}
-
-function isValidPhone(phone: string): boolean {
-  const digits = normalizePhone(phone);
-  return /^55\d{10,11}$/.test(digits);
 }
 
 const TEMPLATE_MAP: Record<string, string> = {
@@ -159,8 +145,8 @@ serve(async (req) => {
     let failCount = 0;
 
     for (const pending of pendingSends) {
-      const phone = normalizePhone(pending.telefone);
-      if (!isValidPhone(phone)) {
+      const phone = normalizeBrazilPhoneE164(pending.telefone);
+      if (!isValidBrazilPhoneE164(phone)) {
         results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "invalid_phone" });
         continue;
       }
