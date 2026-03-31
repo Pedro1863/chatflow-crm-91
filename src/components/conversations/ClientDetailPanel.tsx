@@ -148,10 +148,12 @@ export function ClientDetailPanel({ contatoId }: Props) {
           </Select>
         </div>
 
-        <Button onClick={handleSave} className="w-full" disabled={updateContato.isPending}>
-          <Save className="h-4 w-4 mr-2" />
-          Salvar
-        </Button>
+        {isDirty && (
+          <Button onClick={handleSave} className="w-full" disabled={updateContato.isPending}>
+            <Save className="h-4 w-4 mr-2" />
+            Salvar
+          </Button>
+        )}
       </div>
     </div>
   );
