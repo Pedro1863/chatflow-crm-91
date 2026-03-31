@@ -50,6 +50,13 @@ export function ClientDetailPanel({ contatoId }: Props) {
     }
   }, [contato]);
 
+  const isDirty = contato && (
+    form.nome !== (contato.nome || "") ||
+    form.empresa !== (contato.empresa || "") ||
+    form.cidade !== (contato.cidade || "") ||
+    form.status_funil !== (contato.status_funil || "novo_lead")
+  );
+
   const handleSave = () => {
     if (!contato) return;
 
