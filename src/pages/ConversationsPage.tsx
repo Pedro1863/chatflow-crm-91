@@ -6,15 +6,25 @@ import { InactivityPopup } from "@/components/conversations/InactivityPopup";
 
 const ConversationsPage = () => {
   const [selectedContatoId, setSelectedContatoId] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+
+  // Hide details when changing contact
+  const handleSelect = (contatoId: string) => {
+    setSelectedContatoId(contatoId);
+    setShowDetails(false);
+  };
 
   return (
     <div className="flex h-full">
       <ConversationList
         selectedId={selectedContatoId}
-        onSelect={(contatoId) => setSelectedContatoId(contatoId)}
+        onSelect={handleSelect}
       />
-      <ChatPanel contatoId={selectedContatoId} />
-      {selectedContatoId && (
+      <ChatPanel
+        contatoId={selectedContatoId}
+        onToggleDetails={() => setShowDetails((v) => !v)}
+      />
+      {selectedContatoId && showDetails && (
         <ClientDetailPanel contatoId={selectedContatoId} />
       )}
       <InactivityPopup />
