@@ -15,7 +15,7 @@ const ConversationsPage = () => {
   };
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full overflow-hidden">
       <ConversationList
         selectedId={selectedContatoId}
         onSelect={handleSelect}
