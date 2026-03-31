@@ -50,6 +50,13 @@ export function ClientDetailPanel({ contatoId }: Props) {
     }
   }, [contato]);
 
+  const isDirty = contato && (
+    form.nome !== (contato.nome || "") ||
+    form.empresa !== (contato.empresa || "") ||
+    form.cidade !== (contato.cidade || "") ||
+    form.status_funil !== (contato.status_funil || "novo_lead")
+  );
+
   const handleSave = () => {
     if (!contato) return;
 
@@ -141,10 +148,12 @@ export function ClientDetailPanel({ contatoId }: Props) {
           </Select>
         </div>
 
-        <Button onClick={handleSave} className="w-full" disabled={updateContato.isPending}>
-          <Save className="h-4 w-4 mr-2" />
-          Salvar
-        </Button>
+        {isDirty && (
+          <Button onClick={handleSave} className="w-full" disabled={updateContato.isPending}>
+            <Save className="h-4 w-4 mr-2" />
+            Salvar
+          </Button>
+        )}
       </div>
     </div>
   );
