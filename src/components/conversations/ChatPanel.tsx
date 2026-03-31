@@ -1,16 +1,17 @@
 import { useMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare } from "lucide-react";
+import { Send, MessageSquare, MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
 interface Props {
   contatoId: string | null;
+  onToggleDetails?: () => void;
 }
 
-export function ChatPanel({ contatoId }: Props) {
+export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const { data: mensagens = [] } = useMensagens(contatoId);
   const { data: contato } = useContato(contatoId);
   const sendMensagem = useSendMensagem();
@@ -52,16 +53,23 @@ export function ChatPanel({ contatoId }: Props) {
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
-      <div className="h-14 border-b border-border flex items-center px-4 bg-card">
-        <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center mr-3">
-          <span className="text-sm font-semibold text-primary">
-            {(contato?.nome || contato?.telefone || "?")[0].toUpperCase()}
-          </span>
+      <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-card">
+        <div className="flex items-center">
+          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center mr-3">
+            <span className="text-sm font-semibold text-primary">
+              {(contato?.nome || contato?.telefone || "?")[0].toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <p className="font-medium text-sm text-foreground">{contato?.nome || contato?.telefone}</p>
+            <p className="text-xs text-muted-foreground">{contato?.telefone}</p>
+          </div>
         </div>
-        <div>
-          <p className="font-medium text-sm text-foreground">{contato?.nome || contato?.telefone}</p>
-          <p className="text-xs text-muted-foreground">{contato?.telefone}</p>
-        </div>
+        {onToggleDetails && (
+          <Button variant="ghost" size="icon" onClick={onToggleDetails} className="shrink-0">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Messages */}
