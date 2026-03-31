@@ -11,7 +11,7 @@ interface Props {
   onToggleDetails?: () => void;
 }
 
-export function ChatPanel({ contatoId }: Props) {
+export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const { data: mensagens = [] } = useMensagens(contatoId);
   const { data: contato } = useContato(contatoId);
   const sendMensagem = useSendMensagem();
