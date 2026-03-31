@@ -10,7 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, Cell } from "recharts";
 import { Loader2 } from "lucide-react";
 
 const etapaLabels: Record<string, string> = {
-  primeiro_contato_sem_resposta: "1º Contato s/ Resp.",
+  primeiro_contato_sem_resposta: "Sem Produto",
   proposta_sem_resposta: "Proposta s/ Resp.",
   negociacao_sem_resposta: "Negociação s/ Resp.",
   frete_sem_resposta: "Frete s/ Resp.",
