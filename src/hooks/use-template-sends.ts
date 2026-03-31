@@ -28,6 +28,7 @@ export type SendResult = {
 export type { PhoneStatus };
 
 export const normalizePhone = normalizeBrazilPhoneE164;
+export { getPhoneStatus };
 
 export function isValidPhone(phone: string): boolean {
   return isValidBrazilPhoneE164(phone);
