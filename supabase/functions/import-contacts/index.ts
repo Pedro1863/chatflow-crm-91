@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { normalizeBrazilPhoneE164 } from "../_shared/phone.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,16 +18,6 @@ function parseCSV(text: string): Record<string, string>[] {
     headers.forEach((h, i) => { obj[h] = vals[i] || ""; });
     return obj;
   });
-}
-
-function normalizePhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (!digits) return "";
-  if (digits.length === 13 && digits.startsWith("55")) return digits;
-  if (digits.length === 12 && digits.startsWith("55")) return digits;
-  if (digits.length === 11) return "55" + digits;
-  if (digits.length === 10) return "55" + digits;
-  return digits;
 }
 
 function parseDateBR(dateStr: string): string | null {
@@ -54,7 +45,7 @@ function mapRow(raw: Record<string, string>): ContactRow | null {
   const cidade = raw["cidade"] || "";
   const cliente_desde = raw["cliente desde"] || "";
 
-  const telefone = normalizePhone(celular || fone);
+  const telefone = normalizeBrazilPhoneE164(celular || fone);
 
   return {
     bling_id,

@@ -2,6 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getWebhookUrlFromDb } from "@/hooks/use-system-settings";
 import { toast } from "sonner";
+import {
+  getPhoneStatus,
+  isValidBrazilPhoneE164,
+  normalizeBrazilPhoneE164,
+  type PhoneStatus,
+} from "@/lib/phone";
 
 export type TemplateSend = {
   id: string;
@@ -19,26 +25,13 @@ export type SendResult = {
   error?: string;
 };
 
-// Phone utilities
-export function normalizePhone(raw: string | null | undefined): string {
-  if (!raw) return "";
-  let digits = raw.replace(/[^0-9]/g, "");
-  if (digits.length >= 10 && !digits.startsWith("55")) {
-    digits = "55" + digits;
-  }
-  return digits;
-}
+export type { PhoneStatus };
+
+export const normalizePhone = normalizeBrazilPhoneE164;
+export { getPhoneStatus };
 
 export function isValidPhone(phone: string): boolean {
-  const digits = normalizePhone(phone);
-  return /^55\d{10,11}$/.test(digits);
-}
-
-export type PhoneStatus = "valid" | "missing" | "invalid";
-
-export function getPhoneStatus(phone: string | null | undefined): PhoneStatus {
-  if (!phone || phone.trim() === "") return "missing";
-  return isValidPhone(phone) ? "valid" : "invalid";
+  return isValidBrazilPhoneE164(phone);
 }
 
 // Fetch with timeout (5 seconds)
@@ -125,12 +118,32 @@ export function useSendTemplates() {
       const results: SendResult[] = [];
 
       for (const contact of params.contacts) {
+        const normalizedPhone = normalizePhone(contact.telefone);
+
+        if (!isValidPhone(normalizedPhone)) {
+          const errorMsg = "Telefone inválido para envio em E.164 (+55...)";
+          await logSendAttempt({
+            customer_id: contact.customer_id,
+            telefone: normalizedPhone || contact.telefone,
+            template_name: params.template,
+            status: "erro",
+            erro: errorMsg,
+          });
+          results.push({
+            success: false,
+            telefone: normalizedPhone || contact.telefone,
+            nome: contact.nome,
+            error: errorMsg,
+          });
+          continue;
+        }
+
         try {
           const res = await fetchWithTimeout(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              telefone: contact.telefone,
+              telefone: normalizedPhone,
               nome: contact.nome || "",
               template: params.template,
               variaveis: [contact.nome || ""],
@@ -142,12 +155,12 @@ export function useSendTemplates() {
             const errorMsg = `HTTP ${res.status}: ${errText.slice(0, 200)}`;
             await logSendAttempt({
               customer_id: contact.customer_id,
-              telefone: contact.telefone,
+              telefone: normalizedPhone,
               template_name: params.template,
               status: "erro",
               erro: errorMsg,
             });
-            results.push({ success: false, telefone: contact.telefone, nome: contact.nome, error: errorMsg });
+            results.push({ success: false, telefone: normalizedPhone, nome: contact.nome, error: errorMsg });
             continue;
           }
 
@@ -155,19 +168,25 @@ export function useSendTemplates() {
           await supabase.from("template_sends").insert({
             customer_id: contact.customer_id,
             template_name: params.template,
-            telefone: contact.telefone,
+            telefone: normalizedPhone,
             sent_date: today,
           });
+
+          await supabase
+            .from("customers")
+            .update({ telefone: normalizedPhone })
+            .eq("id", contact.customer_id)
+            .neq("telefone", normalizedPhone);
 
           // Log success
           await logSendAttempt({
             customer_id: contact.customer_id,
-            telefone: contact.telefone,
+            telefone: normalizedPhone,
             template_name: params.template,
             status: "sucesso",
           });
 
-          results.push({ success: true, telefone: contact.telefone, nome: contact.nome });
+          results.push({ success: true, telefone: normalizedPhone, nome: contact.nome });
         } catch (err: any) {
           const errorMsg = err.name === "AbortError"
             ? "Timeout: servidor não respondeu em 5s"
@@ -175,13 +194,13 @@ export function useSendTemplates() {
 
           await logSendAttempt({
             customer_id: contact.customer_id,
-            telefone: contact.telefone,
+            telefone: normalizedPhone,
             template_name: params.template,
             status: "erro",
             erro: errorMsg,
           });
 
-          results.push({ success: false, telefone: contact.telefone, nome: contact.nome, error: errorMsg });
+          results.push({ success: false, telefone: normalizedPhone, nome: contact.nome, error: errorMsg });
         }
       }
 

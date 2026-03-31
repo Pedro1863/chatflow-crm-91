@@ -582,6 +582,10 @@ export type Database = {
           receita_recorrentes: number
         }[]
       }
+      normalize_brazil_phone_e164: {
+        Args: { raw_phone: string }
+        Returns: string
+      }
       registrar_pedido: {
         Args: {
           _bling_id?: string
