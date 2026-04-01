@@ -60,7 +60,6 @@ export default function TemplateSendDialog({
   customers,
   templateName,
   templateLabel,
-  webhookPath = "webhook/send-template",
 }: Props) {
   const { data: todaySends = [] } = useTodaySends(templateName);
   const updatePhone = useUpdateCustomerPhone();
