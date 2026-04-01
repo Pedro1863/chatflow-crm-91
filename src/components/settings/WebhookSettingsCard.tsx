@@ -204,7 +204,7 @@ const WebhookSettingsCard = () => {
           </div>
 
           <p className="text-[10px] text-muted-foreground">
-            Esses nomes devem corresponder aos templates configurados no n8n. Endpoint: <code className="text-foreground">/webhook/send-template</code>
+            Esses nomes devem corresponder aos templates configurados no n8n. Cole a URL completa do webhook.
           </p>
         </div>
       </CardContent>
