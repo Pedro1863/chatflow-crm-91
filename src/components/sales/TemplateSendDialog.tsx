@@ -40,7 +40,6 @@ type Props = {
   customers: Customer[];
   templateName: string;
   templateLabel: string;
-  webhookPath?: string;
 };
 
 const statusIcon: Record<PhoneStatus, React.ReactNode> = {
