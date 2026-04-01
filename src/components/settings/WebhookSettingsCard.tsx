@@ -51,7 +51,7 @@ const WebhookSettingsCard = () => {
     setTesting(true);
     setTestResult(null);
     try {
-      const testUrl = url.replace(/\/$/, "") + "/webhook/send-template";
+      const testUrl = url.replace(/\/$/, "");
       const res = await fetch(testUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,8 +93,8 @@ const WebhookSettingsCard = () => {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          URL base do webhook n8n usada para envio de templates (manual e automático).
-          O sistema adicionará <code className="text-foreground">/webhook/send-template</code> automaticamente.
+          URL completa do webhook n8n usada para envio de templates (manual e automático).
+          Cole a URL exata do seu webhook — o sistema usará ela como está.
         </p>
 
         <div className="flex gap-2">
@@ -204,7 +204,7 @@ const WebhookSettingsCard = () => {
           </div>
 
           <p className="text-[10px] text-muted-foreground">
-            Esses nomes devem corresponder aos templates configurados no n8n. Endpoint: <code className="text-foreground">/webhook/send-template</code>
+            Esses nomes devem corresponder aos templates configurados no n8n. Cole a URL completa do webhook.
           </p>
         </div>
       </CardContent>

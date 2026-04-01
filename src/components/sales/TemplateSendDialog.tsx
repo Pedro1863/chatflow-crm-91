@@ -40,7 +40,6 @@ type Props = {
   customers: Customer[];
   templateName: string;
   templateLabel: string;
-  webhookPath?: string;
 };
 
 const statusIcon: Record<PhoneStatus, React.ReactNode> = {
@@ -61,7 +60,6 @@ export default function TemplateSendDialog({
   customers,
   templateName,
   templateLabel,
-  webhookPath = "webhook/send-template",
 }: Props) {
   const { data: todaySends = [] } = useTodaySends(templateName);
   const updatePhone = useUpdateCustomerPhone();
@@ -148,7 +146,6 @@ export default function TemplateSendDialog({
           nome: c.nome,
         })),
         template: templateName,
-        webhookPath,
       });
       setSendResults(results);
 

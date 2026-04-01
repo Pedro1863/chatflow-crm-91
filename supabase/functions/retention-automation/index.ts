@@ -174,7 +174,7 @@ serve(async (req) => {
         try {
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), 5000);
-          const sendUrl = webhookUrl.replace(/\/$/, "") + "/webhook/send-template";
+          const sendUrl = webhookUrl.replace(/\/$/, "");
           const res = await fetch(sendUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
