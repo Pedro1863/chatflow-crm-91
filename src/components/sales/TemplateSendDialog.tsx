@@ -146,7 +146,6 @@ export default function TemplateSendDialog({
           nome: c.nome,
         })),
         template: templateName,
-        webhookPath,
       });
       setSendResults(results);
 

@@ -106,14 +106,13 @@ export function useSendTemplates() {
     mutationFn: async (params: {
       contacts: { customer_id: string; telefone: string; nome: string | null }[];
       template: string;
-      webhookPath: string;
     }): Promise<SendResult[]> => {
-      const webhookBase = await getWebhookUrlFromDb();
-      if (!webhookBase) {
+      const webhookUrl = await getWebhookUrlFromDb();
+      if (!webhookUrl) {
         throw new Error("WEBHOOK_NOT_CONFIGURED");
       }
 
-      const url = webhookBase.replace(/\/$/, "") + "/" + params.webhookPath.replace(/^\//, "");
+      const url = webhookUrl.replace(/\/$/, "");
       const today = new Date().toISOString().slice(0, 10);
       const results: SendResult[] = [];
 
