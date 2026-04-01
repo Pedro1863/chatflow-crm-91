@@ -51,7 +51,7 @@ const WebhookSettingsCard = () => {
     setTesting(true);
     setTestResult(null);
     try {
-      const testUrl = url.replace(/\/$/, "") + "/webhook/send-template";
+      const testUrl = url.replace(/\/$/, "");
       const res = await fetch(testUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
