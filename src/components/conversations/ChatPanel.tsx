@@ -1,7 +1,7 @@
 import { useMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, MoreVertical } from "lucide-react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";

@@ -22,6 +22,8 @@ export type Mensagem = {
   direcao: string;
   vendedor: string | null;
   timestamp: string;
+  status: string;
+  whatsapp_message_id: string | null;
 };
 
 // ── Realtime helper ──
