@@ -145,11 +145,16 @@ export function useSendMensagem() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (msg: { contato_id: string; telefone: string; mensagem: string; vendedor?: string }) => {
-      // Get webhook URL from DB
-      const { getWebhookUrlFromDb } = await import("@/hooks/use-system-settings");
-      const webhookUrl = await getWebhookUrlFromDb();
+      // Get chat webhook URL from DB
+      const { data: chatUrlData, error: chatUrlError } = await supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "n8n_chat_webhook_url")
+        .maybeSingle();
+      if (chatUrlError) throw chatUrlError;
+      const webhookUrl = chatUrlData?.value || "";
       if (!webhookUrl) {
-        throw new Error("URL do webhook n8n não configurada. Vá em Configurações para definir.");
+        throw new Error("URL do webhook de chat não configurada. Vá em Configurações para definir.");
       }
 
       // 1. Save outgoing message to Supabase

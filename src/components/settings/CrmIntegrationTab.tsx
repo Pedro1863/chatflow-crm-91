@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import OrderImportCard from "./OrderImportCard";
 import ContactImportCard from "./ContactImportCard";
 import WebhookSettingsCard from "./WebhookSettingsCard";
+import ChatWebhookSettingsCard from "./ChatWebhookSettingsCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -17,8 +18,11 @@ const CrmIntegrationTab = () => {
       {/* Importação de contatos */}
       <ContactImportCard />
 
-      {/* Webhook URL centralizada */}
+      {/* Webhook URL — Templates */}
       <WebhookSettingsCard />
+
+      {/* Webhook URL — Mensagens do Chat */}
+      <ChatWebhookSettingsCard />
 
       {/* Webhook principal - Receber Mensagens */}
       <Card>
