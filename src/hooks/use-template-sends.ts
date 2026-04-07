@@ -150,7 +150,7 @@ export function useSendTemplates() {
             .select("id")
             .single();
 
-          const mensagemId = logRow?.id || null;
+          const mensagemId = (logRow as any)?.id || null;
 
           const res = await fetchWithTimeout(url, {
             method: "POST",
