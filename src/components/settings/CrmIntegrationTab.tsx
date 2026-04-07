@@ -368,13 +368,14 @@ Body:
                 <p>Disparos manuais de templates nos dashboards de Aquisição e Retenção. Usa o webhook base + <code className="text-foreground">/webhook/send-template</code>.</p>
                 <div className="bg-muted rounded-lg p-3">
                   <p className="text-xs mb-1 font-medium">Payload enviado ao n8n:</p>
-                  <pre className="text-xs text-foreground whitespace-pre-wrap">
+                   <pre className="text-xs text-foreground whitespace-pre-wrap">
 {`POST {WEBHOOK_URL}/webhook/send-template
 {
   "telefone": "5511999999999",
   "nome": "Nome do cliente",
   "template": "template_aquisicao",
-  "variaveis": ["Nome do cliente"]
+  "variaveis": ["Nome do cliente"],
+  "mensagem_id": "uuid-do-log-envio"
 }`}
                   </pre>
                 </div>
@@ -481,13 +482,14 @@ Headers:
             <p className="text-xs text-muted-foreground">
               <strong>Trigger:</strong> Webhook no n8n na rota <code className="text-foreground">/webhook/send-template</code> (URL base + /webhook/send-template).
             </p>
-            <pre className="text-xs text-foreground whitespace-pre-wrap bg-background rounded p-2 border mt-1">
+             <pre className="text-xs text-foreground whitespace-pre-wrap bg-background rounded p-2 border mt-1">
 {`Payload recebido:
 {
   "telefone": "5511999999999",
   "nome": "Nome do cliente",
   "template": "template_aquisicao",
-  "variaveis": ["Nome do cliente"]
+  "variaveis": ["Nome do cliente"],
+  "mensagem_id": "uuid-do-log-envio"
 }`}
             </pre>
           </div>
