@@ -29,7 +29,7 @@ const audiences: AudienceOption[] = [
     key: "em_risco",
     label: "Em Risco",
     icon: AlertTriangle,
-    template: "template_retencao_risco",
+    template: "tamplate_cliente_risco",
     description: "Clientes entre 15 e 30 dias sem pedido",
   },
   {

@@ -7,7 +7,7 @@ import { useAutomationSettings, useToggleAutomation, useRunAutomation } from "@/
 
 const zoneConfig: Record<string, { label: string; icon: React.ElementType; template: string; color: string }> = {
   saudavel: { label: "Saudáveis", icon: HeartPulse, template: "template_saudaveis", color: "text-primary" },
-  em_risco: { label: "Em Risco", icon: AlertTriangle, template: "template_retencao_risco", color: "text-chart-3" },
+  em_risco: { label: "Em Risco", icon: AlertTriangle, template: "tamplate_cliente_risco", color: "text-chart-3" },
   inativo: { label: "Inativos", icon: UserX, template: "template_retencao_inativos", color: "text-destructive" },
 };
 
