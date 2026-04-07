@@ -350,27 +350,33 @@ export type Database = {
           direcao: string
           id: string
           mensagem: string
+          status: string
           telefone: string | null
           timestamp: string
           vendedor: string | null
+          whatsapp_message_id: string | null
         }
         Insert: {
           contato_id: string
           direcao?: string
           id?: string
           mensagem: string
+          status?: string
           telefone?: string | null
           timestamp?: string
           vendedor?: string | null
+          whatsapp_message_id?: string | null
         }
         Update: {
           contato_id?: string
           direcao?: string
           id?: string
           mensagem?: string
+          status?: string
           telefone?: string | null
           timestamp?: string
           vendedor?: string | null
+          whatsapp_message_id?: string | null
         }
         Relationships: [
           {
