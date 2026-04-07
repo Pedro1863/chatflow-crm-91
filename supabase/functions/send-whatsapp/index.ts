@@ -26,12 +26,13 @@ serve(async (req) => {
       );
     }
 
+    let waMessageId: string | null = null;
+
     // Try to send via WhatsApp Cloud API if credentials are configured
     const whatsappToken = Deno.env.get("WHATSAPP_TOKEN");
     const whatsappPhoneId = Deno.env.get("WHATSAPP_PHONE_ID");
 
     if (whatsappToken && whatsappPhoneId) {
-      // Format phone: remove + and spaces
       const formattedPhone = telefone.replace(/[\s+\-()]/g, "");
 
       const waResponse = await fetch(
@@ -51,7 +52,6 @@ serve(async (req) => {
         }
       );
 
-      let waMessageId: string | null = null;
       if (!waResponse.ok) {
         const waError = await waResponse.text();
         console.error("WhatsApp API error:", waError);
@@ -59,23 +59,26 @@ serve(async (req) => {
         const waData = await waResponse.json();
         waMessageId = waData?.messages?.[0]?.id || null;
       }
+    } else {
+      console.log("WhatsApp credentials not configured - message saved to DB only");
+    }
 
-      // Save message to database
-      const { data, error: msgErr } = await supabase
-        .from("mensagens")
-        .insert({
-          contato_id,
-          telefone,
-          mensagem,
-          direcao: "saida",
-          vendedor: vendedor || null,
-          status: "sent",
-          whatsapp_message_id: waMessageId,
-        })
-        .select()
-        .single();
+    // Save message to database
+    const { data, error: msgErr } = await supabase
+      .from("mensagens")
+      .insert({
+        contato_id,
+        telefone,
+        mensagem,
+        direcao: "saida",
+        vendedor: vendedor || null,
+        status: "sent",
+        whatsapp_message_id: waMessageId,
+      })
+      .select()
+      .single();
 
-      if (msgErr) throw msgErr;
+    if (msgErr) throw msgErr;
 
     // Update ultima_interacao
     await supabase
