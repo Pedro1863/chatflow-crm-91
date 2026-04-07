@@ -245,6 +245,52 @@ serve(async (req) => {
         sent_date: today,
       });
 
+      // ── Create conversation message in chat ──
+      try {
+        let contatoId: string | null = null;
+        const { data: existingContato } = await supabase
+          .from("contatos")
+          .select("id")
+          .eq("telefone", phone)
+          .limit(1)
+          .maybeSingle();
+
+        if (existingContato) {
+          contatoId = existingContato.id;
+        } else {
+          const { data: newContato } = await supabase
+            .from("contatos")
+            .insert({
+              telefone: phone,
+              nome: pending.nome || null,
+              status_funil: "novo_lead",
+              origem: "template",
+            })
+            .select("id")
+            .single();
+          contatoId = newContato?.id || null;
+        }
+
+        if (contatoId) {
+          const templateLabel = templateName.replace(/_/g, " ");
+          await supabase.from("mensagens").insert({
+            contato_id: contatoId,
+            telefone: phone,
+            mensagem: `[Template: ${templateLabel}]`,
+            direcao: "saida",
+            vendedor: "automação",
+            status: "sent",
+          });
+
+          await supabase
+            .from("contatos")
+            .update({ ultima_interacao: now.toISOString() })
+            .eq("id", contatoId);
+        }
+      } catch (chatErr) {
+        console.error("Erro ao criar mensagem no chat:", chatErr);
+      }
+
       // Mark as sent in zone tracking
       await supabase
         .from("customer_zone_tracking")
