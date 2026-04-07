@@ -19,7 +19,7 @@ function classifyHealth(lastOrderDate: string | null, referenceDate: Date): "sau
 
 const TEMPLATE_MAP: Record<string, string> = {
   saudavel: "template_saudaveis",
-  em_risco: "template_retencao_risco",
+  em_risco: "tamplate_cliente_risco",
   inativo: "template_retencao_inativos",
 };
 
