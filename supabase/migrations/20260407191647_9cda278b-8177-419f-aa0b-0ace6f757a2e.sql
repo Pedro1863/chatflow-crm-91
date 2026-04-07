@@ -1,0 +1,1 @@
+ALTER TABLE public.logs_envio_template ADD COLUMN whatsapp_message_id text DEFAULT NULL;
