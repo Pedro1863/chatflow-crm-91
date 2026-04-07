@@ -383,7 +383,7 @@ Body:
                   <ul className="list-disc list-inside space-y-1 text-xs">
                     <li><strong>template_aquisicao</strong> — Aquisição → Novos Clientes</li>
                     <li><strong>template_retencao_ativos</strong> — Retenção → Clientes Ativos</li>
-                    <li><strong>template_retencao_risco</strong> — Retenção → Em Risco</li>
+                    <li><strong>tamplate_cliente_risco</strong> — Retenção → Em Risco</li>
                     <li><strong>template_retencao_inativos</strong> — Retenção → Inativos</li>
                   </ul>
                 </div>
@@ -425,7 +425,7 @@ Body:
                   <p className="text-xs mb-1 font-medium">Templates da automação:</p>
                   <ul className="list-disc list-inside space-y-1 text-xs">
                     <li><strong>template_saudaveis</strong> — Clientes Saudáveis/Ativos</li>
-                    <li><strong>template_retencao_risco</strong> — Clientes Em Risco</li>
+                    <li><strong>tamplate_cliente_risco</strong> — Clientes Em Risco</li>
                     <li><strong>template_retencao_inativos</strong> — Clientes Inativos</li>
                   </ul>
                 </div>

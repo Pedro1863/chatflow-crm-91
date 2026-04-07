@@ -177,7 +177,7 @@ const WebhookSettingsCard = () => {
             {[
               { zone: "Aquisição — Novos Clientes", template: "template_aquisicao", color: "text-chart-2" },
               { zone: "Retenção — Ativos", template: "template_retencao_ativos", color: "text-primary" },
-              { zone: "Retenção — Em Risco", template: "template_retencao_risco", color: "text-chart-3" },
+              { zone: "Retenção — Em Risco", template: "tamplate_cliente_risco", color: "text-chart-3" },
               { zone: "Retenção — Inativos", template: "template_retencao_inativos", color: "text-destructive" },
             ].map((item) => (
               <div key={item.template} className="flex items-center justify-between">
@@ -193,7 +193,7 @@ const WebhookSettingsCard = () => {
           <div className="space-y-1.5">
             {[
               { zone: "Saudáveis / Ativos", template: "template_saudaveis", color: "text-primary" },
-              { zone: "Em Risco", template: "template_retencao_risco", color: "text-chart-3" },
+              { zone: "Em Risco", template: "tamplate_cliente_risco", color: "text-chart-3" },
               { zone: "Inativos", template: "template_retencao_inativos", color: "text-destructive" },
             ].map((item) => (
               <div key={item.template} className="flex items-center justify-between">
