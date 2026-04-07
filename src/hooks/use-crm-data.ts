@@ -158,13 +158,13 @@ export function useSendMensagem() {
       }
 
       // 1. Save outgoing message to Supabase
-      const { error: dbError } = await supabase.from("mensagens").insert({
+      const { data: inserted, error: dbError } = await supabase.from("mensagens").insert({
         contato_id: msg.contato_id,
         telefone: msg.telefone,
         mensagem: msg.mensagem,
         direcao: "saida",
         vendedor: msg.vendedor || null,
-      });
+      }).select("id").single();
       if (dbError) throw dbError;
 
       // 2. Update ultima_interacao
@@ -173,13 +173,14 @@ export function useSendMensagem() {
         .update({ ultima_interacao: new Date().toISOString() })
         .eq("id", msg.contato_id);
 
-      // 3. Send to n8n webhook
+      // 3. Send to n8n webhook (includes our internal message ID)
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           telefone: msg.telefone,
           mensagem: msg.mensagem,
+          mensagem_id: inserted.id,
         }),
       });
 
