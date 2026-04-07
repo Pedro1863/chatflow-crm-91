@@ -199,6 +199,55 @@ export function useSendTemplates() {
               .eq("id", mensagemId);
           }
 
+          // ── Create conversation message in chat ──
+          try {
+            // Find or create contato by phone
+            let contatoId: string | null = null;
+            const { data: existingContato } = await supabase
+              .from("contatos")
+              .select("id")
+              .eq("telefone", normalizedPhone)
+              .limit(1)
+              .maybeSingle();
+
+            if (existingContato) {
+              contatoId = existingContato.id;
+            } else {
+              const { data: newContato } = await supabase
+                .from("contatos")
+                .insert({
+                  telefone: normalizedPhone,
+                  nome: contact.nome || null,
+                  status_funil: "novo_lead",
+                  origem: "template",
+                })
+                .select("id")
+                .single();
+              contatoId = newContato?.id || null;
+            }
+
+            if (contatoId) {
+              // Insert template message into mensagens
+              const templateLabel = params.template.replace(/_/g, " ");
+              await supabase.from("mensagens").insert({
+                contato_id: contatoId,
+                telefone: normalizedPhone,
+                mensagem: `[Template: ${templateLabel}]`,
+                direcao: "saida",
+                vendedor: "automação",
+                status: "sent",
+              });
+
+              // Update ultima_interacao
+              await supabase
+                .from("contatos")
+                .update({ ultima_interacao: new Date().toISOString() })
+                .eq("id", contatoId);
+            }
+          } catch (chatErr) {
+            console.error("Erro ao criar mensagem no chat:", chatErr);
+          }
+
           results.push({ success: true, telefone: normalizedPhone, nome: contact.nome });
         } catch (err: any) {
           const errorMsg = err.name === "AbortError"
