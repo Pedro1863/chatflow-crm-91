@@ -21,21 +21,35 @@ serve(async (req) => {
     const mensagemId = body.mensagem_id;
     const whatsappMessageId = body.whatsapp_message_id || body.wamid;
     const status = body.status;
+    const source = body.source; // "template" or undefined (defaults to "chat")
 
     // ── Flow 1: Link whatsapp_message_id to internal mensagem_id ──
     if (mensagemId && whatsappMessageId && !status) {
-      const { data, error } = await supabase
-        .from("mensagens")
-        .update({ whatsapp_message_id: whatsappMessageId })
-        .eq("id", mensagemId)
-        .select("id");
-
-      if (error) throw error;
-
-      return new Response(
-        JSON.stringify({ success: true, action: "link", updated: data?.length || 0 }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (source === "template") {
+        // Link in logs_envio_template
+        const { data, error } = await supabase
+          .from("logs_envio_template")
+          .update({ whatsapp_message_id: whatsappMessageId })
+          .eq("id", mensagemId)
+          .select("id");
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ success: true, action: "link_template", updated: data?.length || 0 }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } else {
+        // Link in mensagens (chat)
+        const { data, error } = await supabase
+          .from("mensagens")
+          .update({ whatsapp_message_id: whatsappMessageId })
+          .eq("id", mensagemId)
+          .select("id");
+        if (error) throw error;
+        return new Response(
+          JSON.stringify({ success: true, action: "link", updated: data?.length || 0 }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // ── Flow 2: Update status by whatsapp_message_id ──
@@ -48,16 +62,26 @@ serve(async (req) => {
         );
       }
 
-      const { data, error } = await supabase
+      // Try mensagens first
+      const { data: msgData, error: msgErr } = await supabase
         .from("mensagens")
         .update({ status })
         .eq("whatsapp_message_id", whatsappMessageId)
         .select("id");
+      if (msgErr) throw msgErr;
 
-      if (error) throw error;
+      // Also try logs_envio_template
+      const { data: tplData, error: tplErr } = await supabase
+        .from("logs_envio_template")
+        .update({ status })
+        .eq("whatsapp_message_id", whatsappMessageId)
+        .select("id");
+      if (tplErr) throw tplErr;
+
+      const totalUpdated = (msgData?.length || 0) + (tplData?.length || 0);
 
       return new Response(
-        JSON.stringify({ success: true, action: "status_update", updated: data?.length || 0 }),
+        JSON.stringify({ success: true, action: "status_update", updated: totalUpdated }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -65,7 +89,7 @@ serve(async (req) => {
     // ── Neither flow matched ──
     return new Response(
       JSON.stringify({
-        error: "Invalid payload. Send {mensagem_id, whatsapp_message_id} to link, or {whatsapp_message_id, status} to update status.",
+        error: "Invalid payload. Send {mensagem_id, whatsapp_message_id, source?} to link, or {whatsapp_message_id, status} to update status.",
       }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -171,6 +171,20 @@ serve(async (req) => {
 
       // Send via n8n webhook if URL provided
       if (webhookUrl) {
+        // Insert log BEFORE sending to get mensagem_id
+        const { data: logRow } = await supabase
+          .from("logs_envio_template")
+          .insert({
+            customer_id: pending.customer_id,
+            telefone: phone,
+            template_name: templateName,
+            status: "pendente",
+          })
+          .select("id")
+          .single();
+
+        const mensagemId = logRow?.id || null;
+
         try {
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), 5000);
@@ -183,6 +197,7 @@ serve(async (req) => {
               nome: pending.nome,
               template: templateName,
               variaveis: [pending.nome],
+              mensagem_id: mensagemId,
             }),
             signal: controller.signal,
           });
@@ -191,10 +206,11 @@ serve(async (req) => {
           if (!res.ok) {
             const errText = await res.text().catch(() => `HTTP ${res.status}`);
             const errorMsg = `HTTP ${res.status}: ${errText.slice(0, 200)}`;
-            await supabase.from("logs_envio_template").insert({
-              customer_id: pending.customer_id, telefone: phone,
-              template_name: templateName, status: "erro", erro: errorMsg,
-            });
+            if (mensagemId) {
+              await supabase.from("logs_envio_template")
+                .update({ status: "erro", erro: errorMsg })
+                .eq("id", mensagemId);
+            }
             failCount++;
             results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_failed" });
             continue;
@@ -203,13 +219,21 @@ serve(async (req) => {
           const errorMsg = err.name === "AbortError"
             ? "Timeout: servidor não respondeu em 5s"
             : err.message || "Erro desconhecido";
-          await supabase.from("logs_envio_template").insert({
-            customer_id: pending.customer_id, telefone: phone,
-            template_name: templateName, status: "erro", erro: errorMsg,
-          });
+          if (mensagemId) {
+            await supabase.from("logs_envio_template")
+              .update({ status: "erro", erro: errorMsg })
+              .eq("id", mensagemId);
+          }
           failCount++;
           results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_error" });
           continue;
+        }
+
+        // Update log to success
+        if (mensagemId) {
+          await supabase.from("logs_envio_template")
+            .update({ status: "sucesso" })
+            .eq("id", mensagemId);
         }
       }
 
@@ -230,12 +254,6 @@ serve(async (req) => {
           updated_at: now.toISOString(),
         })
         .eq("customer_id", pending.customer_id);
-
-      // Log success
-      await supabase.from("logs_envio_template").insert({
-        customer_id: pending.customer_id, telefone: phone,
-        template_name: templateName, status: "sucesso",
-      });
 
       sentCount++;
       results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "sent" });

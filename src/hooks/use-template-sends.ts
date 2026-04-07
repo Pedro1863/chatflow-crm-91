@@ -138,6 +138,20 @@ export function useSendTemplates() {
         }
 
         try {
+          // Insert log BEFORE sending to get the mensagem_id
+          const { data: logRow } = await supabase
+            .from("logs_envio_template" as any)
+            .insert({
+              customer_id: contact.customer_id,
+              telefone: normalizedPhone,
+              template_name: params.template,
+              status: "pendente",
+            })
+            .select("id")
+            .single();
+
+          const mensagemId = (logRow as any)?.id || null;
+
           const res = await fetchWithTimeout(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -146,19 +160,19 @@ export function useSendTemplates() {
               nome: contact.nome || "",
               template: params.template,
               variaveis: [contact.nome || ""],
+              mensagem_id: mensagemId,
             }),
           });
 
           if (!res.ok) {
             const errText = await res.text().catch(() => `HTTP ${res.status}`);
             const errorMsg = `HTTP ${res.status}: ${errText.slice(0, 200)}`;
-            await logSendAttempt({
-              customer_id: contact.customer_id,
-              telefone: normalizedPhone,
-              template_name: params.template,
-              status: "erro",
-              erro: errorMsg,
-            });
+            if (mensagemId) {
+              await supabase
+                .from("logs_envio_template" as any)
+                .update({ status: "erro", erro: errorMsg })
+                .eq("id", mensagemId);
+            }
             results.push({ success: false, telefone: normalizedPhone, nome: contact.nome, error: errorMsg });
             continue;
           }
@@ -177,13 +191,13 @@ export function useSendTemplates() {
             .eq("id", contact.customer_id)
             .neq("telefone", normalizedPhone);
 
-          // Log success
-          await logSendAttempt({
-            customer_id: contact.customer_id,
-            telefone: normalizedPhone,
-            template_name: params.template,
-            status: "sucesso",
-          });
+          // Update log to success
+          if (mensagemId) {
+            await supabase
+              .from("logs_envio_template" as any)
+              .update({ status: "sucesso" })
+              .eq("id", mensagemId);
+          }
 
           results.push({ success: true, telefone: normalizedPhone, nome: contact.nome });
         } catch (err: any) {
