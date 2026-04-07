@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { normalizeBrazilPhoneE164 } from "../_shared/phone.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,26 +20,32 @@ serve(async (req) => {
 
     const body = await req.json();
 
-    const telefone = body.telefone || body.phone || body.from || body.wa_id;
+    const rawTelefone = body.telefone || body.phone || body.from || body.wa_id;
     const mensagem = body.mensagem || body.message || body.text || body.body || "";
     const direcao = body.direcao || body.direction || "entrada";
     const vendedor = body.vendedor || body.seller || null;
 
-    if (!telefone) {
+    if (!rawTelefone) {
       return new Response(JSON.stringify({ error: "telefone is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Localizar contato pelo telefone
-    let { data: contato } = await supabase
+    // Normalize phone to match DB format (without +)
+    const telefone = normalizeBrazilPhoneE164(rawTelefone);
+
+    // Localizar contato pelo telefone (use limit(1) to handle duplicates gracefully)
+    const { data: contatos } = await supabase
       .from("contatos")
       .select("*")
       .eq("telefone", telefone)
-      .single();
+      .order("ultima_interacao", { ascending: false, nullsFirst: false })
+      .limit(1);
 
-    // Se não existe, o n8n deve criar antes. Mas como fallback, criamos com dados mínimos
+    let contato = contatos && contatos.length > 0 ? contatos[0] : null;
+
+    // Se não existe, criar com dados mínimos
     if (!contato) {
       const { data: novo, error: errContato } = await supabase
         .from("contatos")
@@ -47,7 +54,7 @@ serve(async (req) => {
           nome: body.nome || body.name || null,
           empresa: body.empresa || null,
           cidade: body.cidade || null,
-          origem: body.origem || "whatsapp",
+          origem: body.origem || "WhatsApp",
         })
         .select()
         .single();
