@@ -51,29 +51,31 @@ serve(async (req) => {
         }
       );
 
+      let waMessageId: string | null = null;
       if (!waResponse.ok) {
         const waError = await waResponse.text();
         console.error("WhatsApp API error:", waError);
-        // Continue to save the message even if WhatsApp fails
+      } else {
+        const waData = await waResponse.json();
+        waMessageId = waData?.messages?.[0]?.id || null;
       }
-    } else {
-      console.log("WhatsApp credentials not configured - message saved to DB only");
-    }
 
-    // Save message to database
-    const { data, error: msgErr } = await supabase
-      .from("mensagens")
-      .insert({
-        contato_id,
-        telefone,
-        mensagem,
-        direcao: "saida",
-        vendedor: vendedor || null,
-      })
-      .select()
-      .single();
+      // Save message to database
+      const { data, error: msgErr } = await supabase
+        .from("mensagens")
+        .insert({
+          contato_id,
+          telefone,
+          mensagem,
+          direcao: "saida",
+          vendedor: vendedor || null,
+          status: "sent",
+          whatsapp_message_id: waMessageId,
+        })
+        .select()
+        .single();
 
-    if (msgErr) throw msgErr;
+      if (msgErr) throw msgErr;
 
     // Update ultima_interacao
     await supabase
