@@ -197,6 +197,8 @@ export function useSendMensagem() {
         direcao: "saida",
         vendedor: vars.vendedor || null,
         timestamp: new Date().toISOString(),
+        status: "sent",
+        whatsapp_message_id: null,
       };
 
       qc.setQueryData<Mensagem[]>(["mensagens", vars.contato_id], (old = []) => [...old, optimistic]);

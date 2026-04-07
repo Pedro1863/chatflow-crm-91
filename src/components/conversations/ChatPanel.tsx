@@ -90,9 +90,22 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
                 <p className="text-xs font-medium text-primary mb-1">{msg.vendedor}</p>
               )}
               <p>{msg.mensagem}</p>
-              <p className="text-xs text-muted-foreground mt-1 text-right">
-                {format(new Date(msg.timestamp), "HH:mm")}
-              </p>
+              <div className="flex items-center justify-end gap-1 mt-1">
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(msg.timestamp), "HH:mm")}
+                </p>
+                {msg.direcao === "saida" && (
+                  <span className="inline-flex">
+                    {msg.status === "read" ? (
+                      <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
+                    ) : msg.status === "delivered" ? (
+                      <CheckCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : (
+                      <Check className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         ))}
