@@ -26,12 +26,13 @@ serve(async (req) => {
       );
     }
 
+    let waMessageId: string | null = null;
+
     // Try to send via WhatsApp Cloud API if credentials are configured
     const whatsappToken = Deno.env.get("WHATSAPP_TOKEN");
     const whatsappPhoneId = Deno.env.get("WHATSAPP_PHONE_ID");
 
     if (whatsappToken && whatsappPhoneId) {
-      // Format phone: remove + and spaces
       const formattedPhone = telefone.replace(/[\s+\-()]/g, "");
 
       const waResponse = await fetch(
@@ -54,7 +55,9 @@ serve(async (req) => {
       if (!waResponse.ok) {
         const waError = await waResponse.text();
         console.error("WhatsApp API error:", waError);
-        // Continue to save the message even if WhatsApp fails
+      } else {
+        const waData = await waResponse.json();
+        waMessageId = waData?.messages?.[0]?.id || null;
       }
     } else {
       console.log("WhatsApp credentials not configured - message saved to DB only");
@@ -69,6 +72,8 @@ serve(async (req) => {
         mensagem,
         direcao: "saida",
         vendedor: vendedor || null,
+        status: "sent",
+        whatsapp_message_id: waMessageId,
       })
       .select()
       .single();
