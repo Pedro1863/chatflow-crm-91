@@ -31,8 +31,32 @@ serve(async (req) => {
           .from("logs_envio_template")
           .update({ whatsapp_message_id: whatsappMessageId })
           .eq("id", mensagemId)
-          .select("id");
+          .select("id, telefone");
         if (error) throw error;
+
+        // Also link in the corresponding mensagens row (chat) by matching telefone + most recent template message
+        if (data && data.length > 0) {
+          const telefone = data[0].telefone;
+          if (telefone) {
+            const { data: msgRows } = await supabase
+              .from("mensagens")
+              .select("id")
+              .eq("telefone", telefone)
+              .eq("direcao", "saida")
+              .is("whatsapp_message_id", null)
+              .ilike("mensagem", "[Template:%")
+              .order("timestamp", { ascending: false })
+              .limit(1);
+
+            if (msgRows && msgRows.length > 0) {
+              await supabase
+                .from("mensagens")
+                .update({ whatsapp_message_id: whatsappMessageId })
+                .eq("id", msgRows[0].id);
+            }
+          }
+        }
+
         return new Response(
           JSON.stringify({ success: true, action: "link_template", updated: data?.length || 0 }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
