@@ -354,33 +354,48 @@ export type Database = {
         Row: {
           contato_id: string
           direcao: string
+          file_name: string | null
           id: string
+          media_id: string | null
+          media_url: string | null
           mensagem: string
+          mime_type: string | null
           status: string
           telefone: string | null
           timestamp: string
+          type: string
           vendedor: string | null
           whatsapp_message_id: string | null
         }
         Insert: {
           contato_id: string
           direcao?: string
+          file_name?: string | null
           id?: string
+          media_id?: string | null
+          media_url?: string | null
           mensagem: string
+          mime_type?: string | null
           status?: string
           telefone?: string | null
           timestamp?: string
+          type?: string
           vendedor?: string | null
           whatsapp_message_id?: string | null
         }
         Update: {
           contato_id?: string
           direcao?: string
+          file_name?: string | null
           id?: string
+          media_id?: string | null
+          media_url?: string | null
           mensagem?: string
+          mime_type?: string | null
           status?: string
           telefone?: string | null
           timestamp?: string
+          type?: string
           vendedor?: string | null
           whatsapp_message_id?: string | null
         }

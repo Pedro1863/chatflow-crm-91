@@ -24,6 +24,11 @@ export type Mensagem = {
   timestamp: string;
   status: string;
   whatsapp_message_id: string | null;
+  type: string;
+  media_url: string | null;
+  media_id: string | null;
+  mime_type: string | null;
+  file_name: string | null;
 };
 
 // ── Realtime helper ──
@@ -205,6 +210,11 @@ export function useSendMensagem() {
         timestamp: new Date().toISOString(),
         status: "sent",
         whatsapp_message_id: null,
+        type: "text",
+        media_url: null,
+        media_id: null,
+        mime_type: null,
+        file_name: null,
       };
 
       qc.setQueryData<Mensagem[]>(["mensagens", vars.contato_id], (old = []) => [...old, optimistic]);

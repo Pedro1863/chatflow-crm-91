@@ -25,6 +25,13 @@ serve(async (req) => {
     const direcao = body.direcao || body.direction || "entrada";
     const vendedor = body.vendedor || body.seller || null;
 
+    // Media fields
+    const type = body.type || "text";
+    const media_url = body.media_url || null;
+    const media_id = body.media_id || null;
+    const mime_type = body.mime_type || null;
+    const file_name = body.file_name || null;
+
     if (!rawTelefone) {
       return new Response(JSON.stringify({ error: "telefone is required" }), {
         status: 400,
@@ -32,10 +39,8 @@ serve(async (req) => {
       });
     }
 
-    // Normalize phone to match DB format (without +)
     const telefone = normalizeBrazilPhoneE164(rawTelefone);
 
-    // Localizar contato pelo telefone (use limit(1) to handle duplicates gracefully)
     const { data: contatos } = await supabase
       .from("contatos")
       .select("*")
@@ -45,7 +50,6 @@ serve(async (req) => {
 
     let contato = contatos && contatos.length > 0 ? contatos[0] : null;
 
-    // Se não existe, criar com dados mínimos
     if (!contato) {
       const { data: novo, error: errContato } = await supabase
         .from("contatos")
@@ -62,19 +66,22 @@ serve(async (req) => {
       contato = novo;
     }
 
-    // Atualizar ultima_interacao do contato
     await supabase
       .from("contatos")
       .update({ ultima_interacao: new Date().toISOString() })
       .eq("id", contato.id);
 
-    // Salvar mensagem
     const { error: msgErr } = await supabase.from("mensagens").insert({
       contato_id: contato.id,
       telefone,
-      mensagem,
+      mensagem: mensagem || (type !== "text" ? `[${type}]` : ""),
       direcao,
       vendedor,
+      type,
+      media_url,
+      media_id,
+      mime_type,
+      file_name,
     });
 
     if (msgErr) throw msgErr;
