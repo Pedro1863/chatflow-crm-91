@@ -227,12 +227,21 @@ export function useSendTemplates() {
             }
 
             if (contatoId) {
-              // Insert template message into mensagens
+              // Fetch custom template message
+              const { data: msgSetting } = await supabase
+                .from("system_settings")
+                .select("value")
+                .eq("key", `template_msg_${params.template}`)
+                .maybeSingle();
+
+              const customMsg = msgSetting?.value?.trim();
               const templateLabel = params.template.replace(/_/g, " ");
+              const messageText = customMsg || `[Template: ${templateLabel}]`;
+
               await supabase.from("mensagens").insert({
                 contato_id: contatoId,
                 telefone: normalizedPhone,
-                mensagem: `[Template: ${templateLabel}]`,
+                mensagem: messageText,
                 direcao: "saida",
                 vendedor: "automação",
                 status: "sent",
