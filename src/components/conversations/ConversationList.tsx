@@ -1,5 +1,6 @@
 import { useContatos } from "@/hooks/use-crm-data";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Search, MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
@@ -74,11 +75,14 @@ export function ConversationList({ selectedId, onSelect }: Props) {
                   isSelected ? "bg-muted border-l-2 border-l-primary" : "border-l-2 border-l-transparent"
                 }`}
               >
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-bold text-primary">
+                <Avatar className="h-10 w-10 rounded-xl shrink-0">
+                  {contato.foto_url ? (
+                    <AvatarImage src={contato.foto_url} alt={contato.nome || "Foto"} />
+                  ) : null}
+                  <AvatarFallback className="rounded-xl bg-primary/10 text-sm font-bold text-primary">
                     {(contato.nome || contato.telefone)[0].toUpperCase()}
-                  </span>
-                </div>
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline">
                     <span className="font-semibold text-sm truncate text-foreground">
