@@ -6,6 +6,7 @@ import OrderImportCard from "./OrderImportCard";
 import ContactImportCard from "./ContactImportCard";
 import WebhookSettingsCard from "./WebhookSettingsCard";
 import ChatWebhookSettingsCard from "./ChatWebhookSettingsCard";
+import TemplateMessagesCard from "./TemplateMessagesCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -23,6 +24,9 @@ const CrmIntegrationTab = () => {
 
       {/* Webhook URL — Mensagens do Chat */}
       <ChatWebhookSettingsCard />
+
+      {/* Mensagens dos Templates */}
+      <TemplateMessagesCard />
 
       {/* Webhook principal - Receber Mensagens */}
       <Card>

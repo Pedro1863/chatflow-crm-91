@@ -272,11 +272,21 @@ serve(async (req) => {
         }
 
         if (contatoId) {
+          // Fetch custom template message from system_settings
+          const { data: msgSetting } = await supabase
+            .from("system_settings")
+            .select("value")
+            .eq("key", `template_msg_${templateName}`)
+            .maybeSingle();
+
+          const customMsg = msgSetting?.value?.trim();
           const templateLabel = templateName.replace(/_/g, " ");
+          const messageText = customMsg || `[Template: ${templateLabel}]`;
+
           await supabase.from("mensagens").insert({
             contato_id: contatoId,
             telefone: phone,
-            mensagem: `[Template: ${templateLabel}]`,
+            mensagem: messageText,
             direcao: "saida",
             vendedor: "automação",
             status: "sent",
