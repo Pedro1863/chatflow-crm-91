@@ -100,6 +100,7 @@ export type Database = {
           cidade: string | null
           data_criacao: string
           empresa: string | null
+          foto_url: string | null
           id: string
           nome: string | null
           origem: string | null
@@ -111,6 +112,7 @@ export type Database = {
           cidade?: string | null
           data_criacao?: string
           empresa?: string | null
+          foto_url?: string | null
           id?: string
           nome?: string | null
           origem?: string | null
@@ -122,6 +124,7 @@ export type Database = {
           cidade?: string | null
           data_criacao?: string
           empresa?: string | null
+          foto_url?: string | null
           id?: string
           nome?: string | null
           origem?: string | null
