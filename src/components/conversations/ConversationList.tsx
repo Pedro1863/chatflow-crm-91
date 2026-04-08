@@ -32,7 +32,7 @@ export function ConversationList({ selectedId, onSelect }: Props) {
   });
 
   return (
-    <div className="w-80 border-r border-border flex flex-col bg-card shrink-0">
+    <div className="w-80 border-r border-border flex flex-col bg-card/50 backdrop-blur-sm shrink-0">
       <div className="p-3 border-b border-border space-y-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -40,13 +40,13 @@ export function ConversationList({ selectedId, onSelect }: Props) {
             placeholder="Buscar por nome ou telefone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-muted border-0"
+            className="pl-9 bg-muted/50 border-border/50 rounded-xl"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="w-full text-sm bg-muted text-foreground rounded-md px-3 py-2 border-0 outline-none"
+          className="w-full text-sm bg-muted/50 text-foreground rounded-xl px-3 py-2 border border-border/50 outline-none transition-colors focus:border-primary/50"
         >
           <option value="">Todos os status</option>
           {Object.entries(statusLabels).map(([k, v]) => (
@@ -60,7 +60,7 @@ export function ConversationList({ selectedId, onSelect }: Props) {
           <div className="p-4 text-center text-muted-foreground text-sm">Carregando...</div>
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center">
-            <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground/40 mb-2" />
+            <MessageSquare className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
             <p className="text-sm text-muted-foreground">Nenhum contato encontrado</p>
           </div>
         ) : (
@@ -70,22 +70,22 @@ export function ConversationList({ selectedId, onSelect }: Props) {
               <button
                 key={contato.id}
                 onClick={() => onSelect(contato.id)}
-                className={`w-full flex items-start gap-3 p-3 text-left transition-colors hover:bg-muted/50 ${
-                  isSelected ? "bg-muted" : ""
+                className={`w-full flex items-start gap-3 p-3 text-left transition-all duration-200 hover:bg-muted/50 ${
+                  isSelected ? "bg-muted border-l-2 border-l-primary" : "border-l-2 border-l-transparent"
                 }`}
               >
-                <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                  <span className="text-sm font-semibold text-primary">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-primary">
                     {(contato.nome || contato.telefone)[0].toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline">
-                    <span className="font-medium text-sm truncate text-foreground">
+                    <span className="font-semibold text-sm truncate text-foreground">
                       {contato.nome || contato.telefone}
                     </span>
                     {contato.ultima_interacao && (
-                      <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                      <span className="text-[11px] text-muted-foreground shrink-0 ml-2">
                         {formatDistanceToNow(new Date(contato.ultima_interacao), {
                           addSuffix: true,
                           locale: ptBR,
@@ -96,7 +96,7 @@ export function ConversationList({ selectedId, onSelect }: Props) {
                   <p className="text-xs text-muted-foreground truncate mt-0.5">
                     {contato.telefone}
                   </p>
-                  <span className="inline-block text-xs bg-primary/10 text-primary rounded px-1.5 py-0.5 mt-1">
+                  <span className="inline-block text-[11px] font-medium bg-primary/10 text-primary rounded-md px-2 py-0.5 mt-1.5">
                     {statusLabels[contato.status_funil] || contato.status_funil}
                   </span>
                 </div>
