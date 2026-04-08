@@ -1,1 +1,0 @@
-ALTER TABLE public.contatos ADD COLUMN foto_url text DEFAULT NULL;

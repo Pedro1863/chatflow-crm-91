@@ -12,7 +12,6 @@ export type Contato = {
   origem: string | null;
   ultima_interacao: string | null;
   data_criacao: string;
-  foto_url: string | null;
 };
 
 export type Mensagem = {
