@@ -210,6 +210,11 @@ export function useSendMensagem() {
         timestamp: new Date().toISOString(),
         status: "sent",
         whatsapp_message_id: null,
+        type: "text",
+        media_url: null,
+        media_id: null,
+        mime_type: null,
+        file_name: null,
       };
 
       qc.setQueryData<Mensagem[]>(["mensagens", vars.contato_id], (old = []) => [...old, optimistic]);
