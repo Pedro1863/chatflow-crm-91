@@ -1,6 +1,8 @@
 import { useMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
+import { useFetchProfilePhoto } from "@/hooks/use-profile-photo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Send, MessageSquare, MoreVertical, Check, CheckCheck } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { format } from "date-fns";
@@ -17,6 +19,9 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const sendMensagem = useSendMensagem();
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Trigger profile photo fetch when conversation opens
+  useFetchProfilePhoto(contatoId, contato?.telefone ?? null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -58,11 +63,14 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       {/* Header */}
       <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-card/50 backdrop-blur-sm">
         <div className="flex items-center">
-          <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center mr-3">
-            <span className="text-sm font-bold text-primary">
+          <Avatar className="h-9 w-9 rounded-xl mr-3">
+            {contato?.foto_url ? (
+              <AvatarImage src={contato.foto_url} alt={contato?.nome || "Foto"} />
+            ) : null}
+            <AvatarFallback className="rounded-xl bg-primary/15 text-sm font-bold text-primary">
               {(contato?.nome || contato?.telefone || "?")[0].toUpperCase()}
-            </span>
-          </div>
+            </AvatarFallback>
+          </Avatar>
           <div>
             <p className="font-semibold text-sm text-foreground">{contato?.nome || contato?.telefone}</p>
             <p className="text-xs text-muted-foreground">{contato?.telefone}</p>
