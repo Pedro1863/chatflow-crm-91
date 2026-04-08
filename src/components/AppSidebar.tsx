@@ -1,4 +1,4 @@
-import { MessageSquare, BarChart3, Users, Settings, TrendingUp } from "lucide-react";
+import { MessageSquare, BarChart3, Users, Settings, TrendingUp, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -26,13 +26,13 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        <div className="flex items-center gap-2 px-4 py-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <MessageSquare className="h-4 w-4 text-primary-foreground" />
+        <div className="flex items-center gap-2.5 px-4 py-5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary glow-primary">
+            <Zap className="h-4 w-4 text-primary-foreground" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold text-sidebar-accent-foreground">
-              ZapCRM
+            <span className="text-lg font-bold tracking-tight text-sidebar-accent-foreground">
+              FlowCRM
             </span>
           )}
         </div>
@@ -46,8 +46,8 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="hover:bg-sidebar-accent"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                      className="hover:bg-sidebar-accent transition-all duration-200"
+                      activeClassName="bg-sidebar-accent text-primary font-medium"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
