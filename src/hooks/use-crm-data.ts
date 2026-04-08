@@ -24,6 +24,11 @@ export type Mensagem = {
   timestamp: string;
   status: string;
   whatsapp_message_id: string | null;
+  type: string;
+  media_url: string | null;
+  media_id: string | null;
+  mime_type: string | null;
+  file_name: string | null;
 };
 
 // ── Realtime helper ──

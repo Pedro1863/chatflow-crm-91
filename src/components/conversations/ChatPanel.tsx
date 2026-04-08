@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, MessageSquare, MoreVertical, Check, CheckCheck } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { MediaMessage } from "./MediaMessage";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -92,7 +93,14 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
               {msg.vendedor && msg.direcao === "saida" && (
                 <p className="text-xs font-semibold text-primary mb-1">{msg.vendedor}</p>
               )}
-              <p className="leading-relaxed">{msg.mensagem}</p>
+              <MediaMessage
+                type={msg.type || "text"}
+                mediaUrl={msg.media_url}
+                mediaId={msg.media_id}
+                mimeType={msg.mime_type}
+                fileName={msg.file_name}
+                mensagem={msg.mensagem}
+              />
               <div className="flex items-center justify-end gap-1.5 mt-1.5">
                 <p className="text-[11px] text-muted-foreground">
                   {format(new Date(msg.timestamp), "HH:mm")}
