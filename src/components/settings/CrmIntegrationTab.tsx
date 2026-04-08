@@ -25,6 +25,9 @@ const CrmIntegrationTab = () => {
       {/* Webhook URL — Mensagens do Chat */}
       <ChatWebhookSettingsCard />
 
+      {/* Mensagens dos Templates */}
+      <TemplateMessagesCard />
+
       {/* Webhook principal - Receber Mensagens */}
       <Card>
         <CardHeader>
