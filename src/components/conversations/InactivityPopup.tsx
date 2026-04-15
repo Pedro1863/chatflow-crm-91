@@ -102,7 +102,7 @@ export function InactivityPopup() {
 
   // Build queue: only contacts that qualify as fallback
   const queue = useMemo<QueueItem[]>(() => {
-    if (!lastMessages || !customerPhones || !pipelineEntries) return [];
+    if (!lastMessages || !pipelineEntries) return [];
 
     const now = Date.now();
     const eligible: QueueItem[] = [];
