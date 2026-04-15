@@ -378,7 +378,7 @@ function DocumentPreview({
 
           {isPdf && (
             <iframe
-              src={src}
+              src={`https://docs.google.com/gview?url=${encodeURIComponent(src)}&embedded=true`}
               className="h-[400px] w-full rounded-xl"
               title={fileName || "PDF"}
               onError={() => setPreviewError(true)}
