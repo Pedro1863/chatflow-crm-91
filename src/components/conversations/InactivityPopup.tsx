@@ -57,18 +57,6 @@ function useLastIncomingMessages() {
   });
 }
 
-/** Fetch all customer phones */
-function useCustomerPhones() {
-  return useQuery({
-    queryKey: ["customer_phones"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("telefone");
-      if (error) throw error;
-      return new Set((data ?? []).map((c) => c.telefone));
-    },
-    staleTime: 60_000,
-  });
-}
 
 /** Fetch leads_pipeline entries with manual save and popup control info */
 function useLeadsPipeline() {
@@ -91,7 +79,6 @@ function useLeadsPipeline() {
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
   const { data: lastMessages } = useLastIncomingMessages();
-  const { data: customerPhones } = useCustomerPhones();
   const { data: pipelineEntries } = useLeadsPipeline();
   const registerAttempt = useRegisterLeadAttempt();
   const markPopupShown = useMarkPopupShown();
@@ -115,7 +102,7 @@ export function InactivityPopup() {
 
   // Build queue: only contacts that qualify as fallback
   const queue = useMemo<QueueItem[]>(() => {
-    if (!lastMessages || !customerPhones || !pipelineEntries) return [];
+    if (!lastMessages || !pipelineEntries) return [];
 
     const now = Date.now();
     const eligible: QueueItem[] = [];
@@ -139,8 +126,6 @@ export function InactivityPopup() {
     }
 
     for (const contato of contatos) {
-      // Skip customers
-      if (customerPhones.has(contato.telefone)) continue;
       if (contato.status_funil === "cliente") continue;
       // Skip if already processed this session
       if (processedPhones.has(contato.telefone)) continue;
@@ -181,7 +166,7 @@ export function InactivityPopup() {
     }
 
     return eligible;
-  }, [contatos, lastMessages, customerPhones, pipelineEntries, processedPhones]);
+  }, [contatos, lastMessages, pipelineEntries, processedPhones]);
 
   useEffect(() => {
     setCurrentIndex(0);
