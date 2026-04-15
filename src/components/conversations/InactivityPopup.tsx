@@ -79,7 +79,6 @@ function useLeadsPipeline() {
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
   const { data: lastMessages } = useLastIncomingMessages();
-  const { data: customerPhones } = useCustomerPhones();
   const { data: pipelineEntries } = useLeadsPipeline();
   const registerAttempt = useRegisterLeadAttempt();
   const markPopupShown = useMarkPopupShown();
