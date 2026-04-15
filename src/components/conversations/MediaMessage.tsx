@@ -1,11 +1,13 @@
-import { Download, FileText, Play, Pause, Image as ImageIcon, Film, Mic, StickerIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState, useRef } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  FileText,
+  Play,
+  Pause,
+  Image as ImageIcon,
+  Film,
+  Mic,
+  StickerIcon,
+} from "lucide-react";
+import { useRef, useState, type MouseEvent } from "react";
 
 interface Props {
   type: string;
@@ -17,8 +19,8 @@ interface Props {
 }
 
 export function MediaMessage({ type, mediaUrl, mediaId, mimeType, fileName, mensagem }: Props) {
-  const src = mediaUrl || "";
-  const hasMedia = !!mediaUrl;
+  const src = mediaUrl?.trim() || "";
+  const hasMedia = src.length > 0;
 
   if (type === "text" || !type) {
     return <p className="leading-relaxed">{mensagem}</p>;
@@ -26,16 +28,16 @@ export function MediaMessage({ type, mediaUrl, mediaId, mimeType, fileName, mens
 
   if (!hasMedia && mediaId) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground text-xs italic">
+      <div className="flex items-center gap-2 text-xs italic text-muted-foreground">
         <TypeIcon type={type} />
-        <span>Mídia indisponível (ID: {mediaId?.slice(0, 8)}...)</span>
+        <span>Mídia indisponível (ID: {mediaId.slice(0, 8)}...)</span>
       </div>
     );
   }
 
   if (!hasMedia) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground text-xs italic">
+      <div className="flex items-center gap-2 text-xs italic text-muted-foreground">
         <TypeIcon type={type} />
         <span>Mídia indisponível</span>
       </div>
@@ -45,7 +47,7 @@ export function MediaMessage({ type, mediaUrl, mediaId, mimeType, fileName, mens
   return (
     <div className="space-y-2">
       {mensagem && type !== "text" && !mensagem.startsWith("[") && (
-        <p className="leading-relaxed text-sm">{mensagem}</p>
+        <p className="text-sm leading-relaxed">{mensagem}</p>
       )}
       <MediaRenderer type={type} src={src} mimeType={mimeType} fileName={fileName} />
     </div>
@@ -54,55 +56,103 @@ export function MediaMessage({ type, mediaUrl, mediaId, mimeType, fileName, mens
 
 function TypeIcon({ type }: { type: string }) {
   const cls = "h-4 w-4";
+
   switch (type) {
-    case "image": return <ImageIcon className={cls} />;
-    case "audio": return <Mic className={cls} />;
-    case "video": return <Film className={cls} />;
-    case "document": return <FileText className={cls} />;
-    case "sticker": return <StickerIcon className={cls} />;
-    default: return <FileText className={cls} />;
+    case "image":
+      return <ImageIcon className={cls} />;
+    case "audio":
+      return <Mic className={cls} />;
+    case "video":
+      return <Film className={cls} />;
+    case "document":
+      return <FileText className={cls} />;
+    case "sticker":
+      return <StickerIcon className={cls} />;
+    default:
+      return <FileText className={cls} />;
   }
 }
 
-function MediaRenderer({ type, src, mimeType, fileName }: { type: string; src: string; mimeType: string | null; fileName: string | null }) {
+function MediaRenderer({
+  type,
+  src,
+  mimeType,
+  fileName,
+}: {
+  type: string;
+  src: string;
+  mimeType: string | null;
+  fileName: string | null;
+}) {
   switch (type) {
-    case "image": return <ImagePreview src={src} />;
-    case "sticker": return <StickerPreview src={src} />;
-    case "audio": return <AudioPlayer src={src} mimeType={mimeType} />;
-    case "video": return <VideoPlayer src={src} mimeType={mimeType} />;
-    case "document": return <DocumentPreview fileName={fileName} mimeType={mimeType} />;
-    default: return <p className="text-xs text-muted-foreground italic">Tipo desconhecido: {type}</p>;
+    case "image":
+      return <ImagePreview src={src} />;
+    case "sticker":
+      return <StickerPreview src={src} />;
+    case "audio":
+      return <AudioPlayer src={src} mimeType={mimeType} />;
+    case "video":
+      return <VideoPlayer src={src} mimeType={mimeType} />;
+    case "document":
+      return <DocumentPreview src={src} fileName={fileName} mimeType={mimeType} />;
+    default:
+      return <p className="text-xs italic text-muted-foreground">Tipo desconhecido: {type}</p>;
   }
 }
 
 function ImagePreview({ src }: { src: string }) {
-  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return <MediaUnavailableLink src={src} label="Abrir imagem" />;
+  }
+
   return (
-    <>
-      <img
-        src={src}
-        alt="Imagem"
-        className="max-w-full max-h-60 rounded-lg cursor-pointer hover:opacity-90 transition-opacity object-cover"
-        onClick={() => setOpen(true)}
-        loading="lazy"
-      />
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] p-2 bg-background/95 backdrop-blur-sm">
-          <DialogTitle className="sr-only">Visualizar imagem</DialogTitle>
-          <img src={src} alt="Imagem ampliada" className="w-full h-full object-contain rounded" />
-        </DialogContent>
-      </Dialog>
-    </>
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        className="block w-full overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <img
+          src={src}
+          alt="Imagem da conversa"
+          className={`w-full rounded-lg border border-border/60 bg-muted/20 object-contain transition-all ${
+            expanded ? "max-h-[32rem]" : "max-h-72"
+          }`}
+          onError={() => setHasError(true)}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setExpanded((current) => !current)}
+        className="text-[11px] text-primary/70 transition-colors hover:text-primary"
+      >
+        {expanded ? "Recolher imagem" : "Abrir na conversa"}
+      </button>
+    </div>
   );
 }
 
 function StickerPreview({ src }: { src: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return <MediaUnavailableLink src={src} label="Abrir figurinha" />;
+  }
+
   return (
     <img
       src={src}
       alt="Sticker"
-      className="w-32 h-32 object-contain"
+      className="h-32 w-32 object-contain"
+      onError={() => setHasError(true)}
       loading="lazy"
+      referrerPolicy="no-referrer"
     />
   );
 }
@@ -113,14 +163,21 @@ function AudioPlayer({ src, mimeType }: { src: string; mimeType: string | null }
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  const toggle = () => {
+  const toggle = async () => {
     if (!audioRef.current) return;
+
     if (playing) {
       audioRef.current.pause();
-    } else {
-      audioRef.current.play();
+      setPlaying(false);
+      return;
     }
-    setPlaying(!playing);
+
+    try {
+      await audioRef.current.play();
+      setPlaying(true);
+    } catch {
+      setPlaying(false);
+    }
   };
 
   const onTimeUpdate = () => {
@@ -133,53 +190,60 @@ function AudioPlayer({ src, mimeType }: { src: string; mimeType: string | null }
     setDuration(audioRef.current.duration);
   };
 
-  const onEnded = () => setPlaying(false);
-
-  const seekTo = (e: React.MouseEvent<HTMLDivElement>) => {
+  const seekTo = (e: MouseEvent<HTMLDivElement>) => {
     if (!audioRef.current || !duration) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = (e.clientX - rect.left) / rect.width;
     audioRef.current.currentTime = pct * duration;
   };
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, "0")}`;
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div className="flex items-center gap-3 bg-muted/30 rounded-xl p-3 min-w-[200px]">
+    <div className="flex min-w-[200px] items-center gap-3 rounded-xl bg-muted/30 p-3">
       <audio
         ref={audioRef}
         src={src}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
-        onEnded={onEnded}
+        onEnded={() => setPlaying(false)}
+        onPause={() => setPlaying(false)}
+        onPlay={() => setPlaying(true)}
         preload="metadata"
       />
+
       <button
+        type="button"
         onClick={toggle}
-        className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center hover:bg-primary/30 transition-colors shrink-0"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 transition-colors hover:bg-primary/30"
       >
-        {playing ? <Pause className="h-4 w-4 text-primary" /> : <Play className="h-4 w-4 text-primary ml-0.5" />}
+        {playing ? (
+          <Pause className="h-4 w-4 text-primary" />
+        ) : (
+          <Play className="ml-0.5 h-4 w-4 text-primary" />
+        )}
       </button>
+
       <div className="flex-1 space-y-1">
-        <div
-          className="h-1.5 bg-muted rounded-full cursor-pointer relative overflow-hidden"
-          onClick={seekTo}
-        >
+        <div className="relative h-1.5 cursor-pointer overflow-hidden rounded-full bg-muted" onClick={seekTo}>
           <div
-            className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all"
+            className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all"
             style={{ width: duration ? `${(progress / duration) * 100}%` : "0%" }}
           />
         </div>
+
         <div className="flex justify-between text-[10px] text-muted-foreground">
           <span>{formatTime(progress)}</span>
           <span>{duration ? formatTime(duration) : "--:--"}</span>
         </div>
       </div>
-      <Mic className="h-4 w-4 text-primary/50 shrink-0" />
+
+      <Mic className="h-4 w-4 shrink-0 text-primary/50" />
     </div>
   );
 }
@@ -189,46 +253,53 @@ function VideoPlayer({ src, mimeType }: { src: string; mimeType: string | null }
     <video
       src={src}
       controls
-      className="max-w-full max-h-60 rounded-lg"
+      className="max-h-72 max-w-full rounded-lg bg-muted/20"
       preload="metadata"
+      playsInline
     />
   );
 }
 
-function DocumentPreview({ fileName, mimeType }: { fileName: string | null; mimeType: string | null }) {
+function DocumentPreview({
+  src,
+  fileName,
+  mimeType,
+}: {
+  src: string;
+  fileName: string | null;
+  mimeType: string | null;
+}) {
   const isPdf = mimeType?.includes("pdf") || fileName?.endsWith(".pdf");
+
   return (
-    <div className="flex items-center gap-3 bg-muted/30 rounded-xl p-3">
-      <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+    <a
+      href={src}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 transition-colors hover:bg-muted/40"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
         <FileText className="h-5 w-5 text-primary" />
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{fileName || "Documento"}</p>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{fileName || "Documento"}</p>
         <p className="text-[11px] text-muted-foreground">{isPdf ? "PDF" : mimeType || "Documento"}</p>
       </div>
-    </div>
+    </a>
   );
 }
 
-function DownloadButton({ src, fileName, type }: { src: string; fileName: string | null; type: string }) {
-  const handleDownload = () => {
-    const a = document.createElement("a");
-    a.href = src;
-    a.download = fileName || `${type}_${Date.now()}`;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
+function MediaUnavailableLink({ src, label }: { src: string; label: string }) {
   return (
-    <button
-      onClick={handleDownload}
-      className="flex items-center gap-1.5 text-[11px] text-primary/70 hover:text-primary transition-colors"
+    <a
+      href={src}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 text-xs text-primary/70 transition-colors hover:text-primary"
     >
-      <Download className="h-3 w-3" />
-      <span>Baixar</span>
-    </button>
+      <ImageIcon className="h-4 w-4" />
+      <span>{label}</span>
+    </a>
   );
 }
