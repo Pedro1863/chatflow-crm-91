@@ -113,21 +113,74 @@ export function useUpdateContato() {
 
 // ── Mensagens ──
 
+const MESSAGES_PAGE_SIZE = 20;
+
 export function useMensagens(contatoId: string | null) {
   useRealtimeInvalidation("mensagens", ["mensagens", contatoId || ""]);
   return useQuery({
     queryKey: ["mensagens", contatoId],
     queryFn: async () => {
-      if (!contatoId) return [];
+      if (!contatoId) return { messages: [] as Mensagem[], hasMore: false };
+      // Get total count
+      const { count, error: countError } = await supabase
+        .from("mensagens")
+        .select("*", { count: "exact", head: true })
+        .eq("contato_id", contatoId);
+      if (countError) throw countError;
+
+      const total = count || 0;
+      const offset = Math.max(0, total - MESSAGES_PAGE_SIZE);
+
       const { data, error } = await supabase
         .from("mensagens")
         .select("*")
         .eq("contato_id", contatoId)
-        .order("timestamp", { ascending: true });
+        .order("timestamp", { ascending: true })
+        .range(offset, offset + MESSAGES_PAGE_SIZE - 1);
+      if (error) throw error;
+      return { messages: data as Mensagem[], hasMore: offset > 0, total };
+    },
+    enabled: !!contatoId,
+  });
+}
+
+export function useLoadMoreMensagens(contatoId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ currentCount, total }: { currentCount: number; total: number }) => {
+      if (!contatoId) return [];
+      const remaining = total - currentCount;
+      const loadSize = Math.min(MESSAGES_PAGE_SIZE, remaining);
+      const offset = Math.max(0, remaining - loadSize);
+
+      const { data, error } = await supabase
+        .from("mensagens")
+        .select("*")
+        .eq("contato_id", contatoId)
+        .order("timestamp", { ascending: true })
+        .range(offset, offset + loadSize - 1);
       if (error) throw error;
       return data as Mensagem[];
     },
-    enabled: !!contatoId,
+    onSuccess: (olderMessages) => {
+      qc.setQueryData(["mensagens", contatoId], (old: any) => {
+        if (!old) return old;
+        const combined = [...olderMessages, ...old.messages];
+        // deduplicate
+        const seen = new Set<string>();
+        const unique = combined.filter((m: Mensagem) => {
+          if (seen.has(m.id)) return false;
+          seen.add(m.id);
+          return true;
+        });
+        const newCount = unique.length;
+        return {
+          messages: unique,
+          hasMore: newCount < old.total,
+          total: old.total,
+        };
+      });
+    },
   });
 }
 
@@ -198,7 +251,7 @@ export function useSendMensagem() {
     },
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: ["mensagens", vars.contato_id] });
-      const previous = qc.getQueryData<Mensagem[]>(["mensagens", vars.contato_id]);
+      const previous = qc.getQueryData(["mensagens", vars.contato_id]);
 
       const optimistic: Mensagem = {
         id: `temp-${Date.now()}`,
@@ -217,7 +270,10 @@ export function useSendMensagem() {
         file_name: null,
       };
 
-      qc.setQueryData<Mensagem[]>(["mensagens", vars.contato_id], (old = []) => [...old, optimistic]);
+      qc.setQueryData(["mensagens", vars.contato_id], (old: any) => {
+        if (!old) return { messages: [optimistic], hasMore: false, total: 1 };
+        return { ...old, messages: [...old.messages, optimistic], total: (old.total || 0) + 1 };
+      });
 
       return { previous };
     },

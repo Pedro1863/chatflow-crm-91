@@ -1,7 +1,7 @@
-import { useMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
+import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile } from "lucide-react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { MediaMessage } from "./MediaMessage";
 import { format } from "date-fns";
@@ -16,15 +16,39 @@ interface Props {
 }
 
 export function ChatPanel({ contatoId, onToggleDetails }: Props) {
-  const { data: mensagens = [] } = useMensagens(contatoId);
+  const { data: msgData } = useMensagens(contatoId);
+  const mensagens = msgData?.messages ?? [];
+  const hasMore = msgData?.hasMore ?? false;
+  const totalCount = msgData?.total ?? 0;
+  const loadMore = useLoadMoreMensagens(contatoId);
   const { data: contato } = useContato(contatoId);
   const sendMensagem = useSendMensagem();
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [mensagens]);
+  }, [mensagens.length]);
+
+  const handleLoadMore = () => {
+    const scrollEl = scrollContainerRef.current;
+    const prevHeight = scrollEl?.scrollHeight ?? 0;
+    loadMore.mutate(
+      { currentCount: mensagens.length, total: totalCount },
+      {
+        onSuccess: () => {
+          // Preserve scroll position after prepending older messages
+          requestAnimationFrame(() => {
+            if (scrollEl) {
+              const newHeight = scrollEl.scrollHeight;
+              scrollEl.scrollTop = newHeight - prevHeight;
+            }
+          });
+        },
+      }
+    );
+  };
 
   if (!contatoId) {
     return (
@@ -80,7 +104,26 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin bg-background">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin bg-background">
+        {/* Load more button */}
+        {hasMore && (
+          <div className="flex justify-center pb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLoadMore}
+              disabled={loadMore.isPending}
+              className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
+            >
+              {loadMore.isPending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ChevronUp className="h-3.5 w-3.5" />
+              )}
+              Carregar mensagens anteriores
+            </Button>
+          </div>
+        )}
         {mensagens.map((msg) => (
           <div
             key={msg.id}
