@@ -126,8 +126,6 @@ export function InactivityPopup() {
     }
 
     for (const contato of contatos) {
-      // Skip customers
-      if (customerPhones.has(contato.telefone)) continue;
       if (contato.status_funil === "cliente") continue;
       // Skip if already processed this session
       if (processedPhones.has(contato.telefone)) continue;
