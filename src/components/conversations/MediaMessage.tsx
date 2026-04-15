@@ -310,24 +310,115 @@ function DocumentPreview({
   fileName: string | null;
   mimeType: string | null;
 }) {
-  const isPdf = mimeType?.includes("pdf") || fileName?.endsWith(".pdf");
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+
+  const isPdf = mimeType?.includes("pdf") || fileName?.toLowerCase().endsWith(".pdf");
+  const isImage = mimeType?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(fileName || "");
+  const isVideo = mimeType?.startsWith("video/") || /\.(mp4|webm|mov|avi)$/i.test(fileName || "");
+  const isAudio = mimeType?.startsWith("audio/") || /\.(mp3|ogg|wav|aac|m4a)$/i.test(fileName || "");
+  const canPreview = isPdf || isImage || isVideo || isAudio;
+
+  const fileLabel = isPdf
+    ? "PDF"
+    : isImage
+    ? "Imagem"
+    : isVideo
+    ? "Vídeo"
+    : isAudio
+    ? "Áudio"
+    : mimeType || "Documento";
 
   return (
-    <a
-      href={src}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-xl bg-muted/30 p-3 transition-colors hover:bg-muted/40"
-    >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
-        <FileText className="h-5 w-5 text-primary" />
+    <div className="space-y-2">
+      {/* File info bar */}
+      <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
+          <FileText className="h-5 w-5 text-primary" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{fileName || "Documento"}</p>
+          <p className="text-[11px] text-muted-foreground">{fileLabel}</p>
+        </div>
+
+        <div className="flex items-center gap-1">
+          {canPreview && (
+            <button
+              type="button"
+              onClick={() => { setShowPreview(true); setPreviewError(false); }}
+              className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted/50"
+              title="Visualizar"
+            >
+              <Eye className="h-4 w-4 text-primary" />
+            </button>
+          )}
+          <a
+            href={src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-muted/50"
+            title="Baixar"
+          >
+            <Download className="h-4 w-4 text-muted-foreground" />
+          </a>
+        </div>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{fileName || "Documento"}</p>
-        <p className="text-[11px] text-muted-foreground">{isPdf ? "PDF" : mimeType || "Documento"}</p>
-      </div>
-    </a>
+      {/* Inline preview */}
+      {showPreview && !previewError && (
+        <div className="relative rounded-xl border border-border/60 overflow-hidden bg-muted/10">
+          <button
+            type="button"
+            onClick={() => setShowPreview(false)}
+            className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm border border-border/50 transition-colors hover:bg-background"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+
+          {isPdf && (
+            <iframe
+              src={src}
+              className="h-[400px] w-full rounded-xl"
+              title={fileName || "PDF"}
+              onError={() => setPreviewError(true)}
+            />
+          )}
+
+          {isImage && (
+            <img
+              src={src}
+              alt={fileName || "Documento"}
+              className="max-h-[400px] w-full object-contain"
+              onError={() => setPreviewError(true)}
+              referrerPolicy="no-referrer"
+            />
+          )}
+
+          {isVideo && (
+            <video
+              src={src}
+              controls
+              playsInline
+              className="max-h-[400px] w-full"
+              onError={() => setPreviewError(true)}
+            />
+          )}
+
+          {isAudio && (
+            <div className="p-4">
+              <audio src={src} controls className="w-full" onError={() => setPreviewError(true)} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {previewError && (
+        <p className="text-[11px] text-muted-foreground italic">
+          Não foi possível pré-visualizar. Use o botão de download.
+        </p>
+      )}
+    </div>
   );
 }
 
