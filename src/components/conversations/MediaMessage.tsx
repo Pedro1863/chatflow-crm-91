@@ -102,42 +102,20 @@ function MediaRenderer({
 
 function ImagePreview({ src }: { src: string }) {
   const [open, setOpen] = useState(false);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
 
-  const effectiveSrc = blobUrl || src;
-
-  const handleDirectError = () => {
-    if (blobUrl) {
-      setHasError(true);
-      return;
-    }
-    fetch(src, { mode: "cors" })
-      .then((r) => {
-        if (!r.ok) throw new Error("fetch failed");
-        return r.blob();
-      })
-      .then((blob) => setBlobUrl(URL.createObjectURL(blob)))
-      .catch(() => setHasError(true));
-  };
-
   if (hasError) {
-    return (
-      <a href={src} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs text-primary/70 hover:text-primary">
-        <ImageIcon className="h-4 w-4" />
-        <span>Abrir imagem</span>
-      </a>
-    );
+    return <MediaUnavailableLink src={src} label="Abrir imagem" />;
   }
 
   return (
     <>
       <img
-        src={effectiveSrc}
+        src={src}
         alt="Imagem da conversa"
         className="max-h-72 w-full cursor-pointer rounded-lg border border-border/60 bg-muted/20 object-cover transition-opacity hover:opacity-90"
         onClick={() => setOpen(true)}
-        onError={handleDirectError}
+        onError={() => setHasError(true)}
         loading="lazy"
         referrerPolicy="no-referrer"
       />
@@ -148,9 +126,10 @@ function ImagePreview({ src }: { src: string }) {
           onClick={() => setOpen(false)}
         >
           <img
-            src={effectiveSrc}
+            src={src}
             alt="Imagem ampliada"
             className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            referrerPolicy="no-referrer"
           />
         </div>
       )}
