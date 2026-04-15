@@ -251,7 +251,7 @@ export function useSendMensagem() {
     },
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: ["mensagens", vars.contato_id] });
-      const previous = qc.getQueryData<Mensagem[]>(["mensagens", vars.contato_id]);
+      const previous = qc.getQueryData(["mensagens", vars.contato_id]);
 
       const optimistic: Mensagem = {
         id: `temp-${Date.now()}`,
@@ -270,7 +270,10 @@ export function useSendMensagem() {
         file_name: null,
       };
 
-      qc.setQueryData<Mensagem[]>(["mensagens", vars.contato_id], (old = []) => [...old, optimistic]);
+      qc.setQueryData(["mensagens", vars.contato_id], (old: any) => {
+        if (!old) return { messages: [optimistic], hasMore: false, total: 1 };
+        return { ...old, messages: [...old.messages, optimistic], total: (old.total || 0) + 1 };
+      });
 
       return { previous };
     },
