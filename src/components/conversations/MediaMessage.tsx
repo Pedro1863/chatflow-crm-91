@@ -157,111 +157,131 @@ function StickerPreview({ src }: { src: string }) {
 }
 
 function AudioPlayer({ src, mimeType }: { src: string; mimeType: string | null }) {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState(false);
 
+  const getOrCreateAudio = () => {
+    if (audioRef.current) {
+      return audioRef.current;
+    }
+
+    const audio = new Audio(src);
+    audio.preload = mimeType?.includes("mpeg") ? "auto" : "metadata";
+
+    audio.onloadedmetadata = () => {
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+      setError(false);
+    };
+
+    audio.ontimeupdate = () => {
+      setProgress(audio.currentTime);
+      setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    };
+
+    audio.onplay = () => {
+      setPlaying(true);
+      setLoading(false);
+      setError(false);
+    };
+
+    audio.onpause = () => {
+      setPlaying(false);
+      setLoading(false);
+    };
+
+    audio.onended = () => {
+      setPlaying(false);
+      setProgress(0);
+    };
+
+    audio.onerror = () => {
+      setPlaying(false);
+      setLoading(false);
+      setError(true);
+      audioRef.current = null;
+    };
+
+    audioRef.current = audio;
+    return audio;
+  };
+
   const toggle = () => {
-    if (!audioRef.current) return;
+    const audio = getOrCreateAudio();
 
     if (playing) {
-      audioRef.current.pause();
-      setPlaying(false);
-    } else {
-      audioRef.current.play().then(() => setPlaying(true)).catch(() => {
-        setPlaying(false);
-        setError(true);
-      });
+      audio.pause();
+      return;
     }
-  };
 
-  const onTimeUpdate = () => {
-    if (!audioRef.current) return;
-    setProgress(audioRef.current.currentTime);
-  };
+    setLoading(true);
+    setError(false);
 
-  const onLoadedMetadata = () => {
-    if (!audioRef.current) return;
-    setDuration(audioRef.current.duration);
+    audio.play().catch(() => {
+      setPlaying(false);
+      setLoading(false);
+      setError(true);
+      audioRef.current = null;
+    });
   };
 
   const seekTo = (e: MouseEvent<HTMLDivElement>) => {
-    if (!audioRef.current || !duration) return;
+    const audio = audioRef.current;
+
+    if (!audio || !duration) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = (e.clientX - rect.left) / rect.width;
-    audioRef.current.currentTime = pct * duration;
+    audio.currentTime = pct * duration;
+    setProgress(audio.currentTime);
   };
 
   const formatTime = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  if (error) {
-    return (
-      <a
-        href={src}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 rounded-xl bg-muted/30 p-3 text-xs text-primary/70 hover:text-primary transition-colors"
-      >
-        <Mic className="h-4 w-4" />
-        <span>Abrir áudio no navegador</span>
-      </a>
-    );
-  }
-
-  // Determine proper MIME for <source>
-  const resolvedMime = mimeType || (src.endsWith(".ogg") ? "audio/ogg; codecs=opus" : src.endsWith(".mp3") ? "audio/mpeg" : "audio/ogg");
-
   return (
-    <div className="flex min-w-[200px] items-center gap-3 rounded-xl bg-muted/30 p-3">
-      <audio
-        ref={audioRef}
-        onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onLoadedMetadata}
-        onEnded={() => setPlaying(false)}
-        onPause={() => setPlaying(false)}
-        onPlay={() => setPlaying(true)}
-        onError={() => setError(true)}
-        preload="metadata"
-        crossOrigin="anonymous"
-      >
-        <source src={src} type={resolvedMime} />
-        <source src={src} type="audio/ogg" />
-        <source src={src} type="audio/mpeg" />
-      </audio>
+    <div className="space-y-1">
+      <div className="flex min-w-[200px] items-center gap-3 rounded-xl bg-muted/30 p-3">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={playing ? "Pausar áudio" : "Reproduzir áudio"}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 transition-colors hover:bg-primary/30"
+        >
+          {loading ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+          ) : playing ? (
+            <Pause className="h-4 w-4 text-primary" />
+          ) : (
+            <Play className="ml-0.5 h-4 w-4 text-primary" />
+          )}
+        </button>
 
-      <button
-        type="button"
-        onClick={toggle}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 transition-colors hover:bg-primary/30"
-      >
-        {playing ? (
-          <Pause className="h-4 w-4 text-primary" />
-        ) : (
-          <Play className="ml-0.5 h-4 w-4 text-primary" />
-        )}
-      </button>
+        <div className="flex-1 space-y-1">
+          <div className="relative h-1.5 cursor-pointer overflow-hidden rounded-full bg-muted" onClick={seekTo}>
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all"
+              style={{ width: duration ? `${(progress / duration) * 100}%` : "0%" }}
+            />
+          </div>
 
-      <div className="flex-1 space-y-1">
-        <div className="relative h-1.5 cursor-pointer overflow-hidden rounded-full bg-muted" onClick={seekTo}>
-          <div
-            className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all"
-            style={{ width: duration ? `${(progress / duration) * 100}%` : "0%" }}
-          />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>{formatTime(progress)}</span>
+            <span>{duration ? formatTime(duration) : loading ? "..." : "--:--"}</span>
+          </div>
         </div>
 
-        <div className="flex justify-between text-[10px] text-muted-foreground">
-          <span>{formatTime(progress)}</span>
-          <span>{duration ? formatTime(duration) : "--:--"}</span>
-        </div>
+        <Mic className="h-4 w-4 shrink-0 text-primary/50" />
       </div>
 
-      <Mic className="h-4 w-4 shrink-0 text-primary/50" />
+      {error && <p className="text-[11px] text-muted-foreground">Não foi possível reproduzir este áudio.</p>}
     </div>
   );
 }
