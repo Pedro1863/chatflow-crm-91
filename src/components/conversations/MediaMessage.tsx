@@ -6,6 +6,9 @@ import {
   Film,
   Mic,
   StickerIcon,
+  Download,
+  Eye,
+  X,
 } from "lucide-react";
 import { useRef, useState, type MouseEvent } from "react";
 
