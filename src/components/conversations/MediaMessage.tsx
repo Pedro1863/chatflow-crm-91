@@ -365,51 +365,66 @@ function DocumentPreview({
         </div>
       </div>
 
-      {/* Inline preview */}
+      {/* Fullscreen preview overlay */}
       {showPreview && !previewError && (
-        <div className="relative rounded-xl border border-border/60 overflow-hidden bg-muted/10">
-          <button
-            type="button"
-            onClick={() => setShowPreview(false)}
-            className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-background/80 backdrop-blur-sm border border-border/50 transition-colors hover:bg-background"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-
-          {isPdf && (
-            <iframe
-              src={`https://docs.google.com/gview?url=${encodeURIComponent(src)}&embedded=true`}
-              className="h-[400px] w-full rounded-xl"
-              title={fileName || "PDF"}
-              onError={() => setPreviewError(true)}
-            />
-          )}
-
-          {isImage && (
-            <img
-              src={src}
-              alt={fileName || "Documento"}
-              className="max-h-[400px] w-full object-contain"
-              onError={() => setPreviewError(true)}
-              referrerPolicy="no-referrer"
-            />
-          )}
-
-          {isVideo && (
-            <video
-              src={src}
-              controls
-              playsInline
-              className="max-h-[400px] w-full"
-              onError={() => setPreviewError(true)}
-            />
-          )}
-
-          {isAudio && (
-            <div className="p-4">
-              <audio src={src} controls className="w-full" onError={() => setPreviewError(true)} />
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-sm"
+          onClick={() => setShowPreview(false)}
+        >
+          <div className="flex items-center justify-between px-4 py-3" onClick={(e) => e.stopPropagation()}>
+            <p className="text-sm font-medium text-white truncate">{fileName || "Documento"}</p>
+            <div className="flex items-center gap-2">
+              <a
+                href={src}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+                title="Baixar"
+              >
+                <Download className="h-4 w-4 text-white" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setShowPreview(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+              >
+                <X className="h-4 w-4 text-white" />
+              </button>
             </div>
-          )}
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4 min-h-0" onClick={(e) => e.stopPropagation()}>
+            {isPdf && (
+              <iframe
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(src)}&embedded=true`}
+                className="h-full w-full max-w-5xl rounded-lg bg-white"
+                title={fileName || "PDF"}
+                onError={() => setPreviewError(true)}
+              />
+            )}
+            {isImage && (
+              <img
+                src={src}
+                alt={fileName || "Documento"}
+                className="max-h-full max-w-full object-contain"
+                onError={() => setPreviewError(true)}
+                referrerPolicy="no-referrer"
+              />
+            )}
+            {isVideo && (
+              <video
+                src={src}
+                controls
+                playsInline
+                className="max-h-full max-w-full"
+                onError={() => setPreviewError(true)}
+              />
+            )}
+            {isAudio && (
+              <div className="w-full max-w-md">
+                <audio src={src} controls className="w-full" onError={() => setPreviewError(true)} />
+              </div>
+            )}
+          </div>
         </div>
       )}
 
