@@ -290,14 +290,69 @@ function AudioPlayer({ src, mimeType }: { src: string; mimeType: string | null }
 }
 
 function VideoPlayer({ src, mimeType }: { src: string; mimeType: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return <MediaUnavailableLink src={src} label="Abrir vídeo" />;
+  }
+
   return (
-    <video
-      src={src}
-      controls
-      className="max-h-72 max-w-full rounded-lg bg-muted/20"
-      preload="metadata"
-      playsInline
-    />
+    <>
+      <div
+        className="relative max-h-72 max-w-full cursor-pointer rounded-lg bg-muted/20 overflow-hidden group"
+        onClick={() => setOpen(true)}
+      >
+        <video
+          src={src}
+          className="max-h-72 max-w-full rounded-lg"
+          preload="metadata"
+          playsInline
+          muted
+          onError={() => setHasError(true)}
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 transition-opacity group-hover:bg-black/40">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm">
+            <Play className="ml-1 h-6 w-6 text-white" />
+          </div>
+        </div>
+      </div>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/90 backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+        >
+          <div className="flex items-center justify-end px-4 py-3 gap-2" onClick={(e) => e.stopPropagation()}>
+            <a
+              href={src}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+              title="Baixar"
+            >
+              <Download className="h-4 w-4 text-white" />
+            </a>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+            >
+              <X className="h-4 w-4 text-white" />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4 min-h-0" onClick={(e) => e.stopPropagation()}>
+            <video
+              src={src}
+              controls
+              autoPlay
+              playsInline
+              className="max-h-full max-w-full"
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
