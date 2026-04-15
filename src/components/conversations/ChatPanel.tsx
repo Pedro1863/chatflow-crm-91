@@ -1,11 +1,14 @@
 import { useMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck } from "lucide-react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { MediaMessage } from "./MediaMessage";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 
 interface Props {
   contatoId: string | null;
@@ -124,7 +127,24 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       </div>
 
       {/* Input */}
-      <div className="p-3 border-t border-border bg-card/50 backdrop-blur-sm flex gap-2">
+      <div className="p-3 border-t border-border bg-card/50 backdrop-blur-sm flex gap-2 items-center">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 rounded-xl">
+              <Smile className="h-5 w-5 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" className="w-auto p-0 border-none shadow-xl">
+            <Picker
+              data={data}
+              onEmojiSelect={(emoji: { native: string }) => setText((prev) => prev + emoji.native)}
+              theme="dark"
+              locale="pt"
+              previewPosition="none"
+              skinTonePosition="search"
+            />
+          </PopoverContent>
+        </Popover>
         <Input
           placeholder="Digite uma mensagem..."
           value={text}
