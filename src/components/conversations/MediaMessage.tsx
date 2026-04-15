@@ -48,7 +48,6 @@ export function MediaMessage({ type, mediaUrl, mediaId, mimeType, fileName, mens
         <p className="leading-relaxed text-sm">{mensagem}</p>
       )}
       <MediaRenderer type={type} src={src} mimeType={mimeType} fileName={fileName} />
-      <DownloadButton src={src} fileName={fileName} type={type} />
     </div>
   );
 }
