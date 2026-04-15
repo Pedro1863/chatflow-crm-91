@@ -45,11 +45,11 @@ export function MediaMessage({ type, mediaUrl, mediaId, mimeType, fileName, mens
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
+      <MediaRenderer type={type} src={src} mimeType={mimeType} fileName={fileName} />
       {mensagem && type !== "text" && !mensagem.startsWith("[") && (
         <p className="text-sm leading-relaxed">{mensagem}</p>
       )}
-      <MediaRenderer type={type} src={src} mimeType={mimeType} fileName={fileName} />
     </div>
   );
 }
@@ -101,7 +101,7 @@ function MediaRenderer({
 }
 
 function ImagePreview({ src }: { src: string }) {
-  const [expanded, setExpanded] = useState(false);
+  const [open, setOpen] = useState(false);
   const [hasError, setHasError] = useState(false);
 
   if (hasError) {
@@ -109,32 +109,31 @@ function ImagePreview({ src }: { src: string }) {
   }
 
   return (
-    <div className="space-y-2">
-      <button
-        type="button"
-        onClick={() => setExpanded((current) => !current)}
-        className="block w-full overflow-hidden rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <img
-          src={src}
-          alt="Imagem da conversa"
-          className={`w-full rounded-lg border border-border/60 bg-muted/20 object-contain transition-all ${
-            expanded ? "max-h-[32rem]" : "max-h-72"
-          }`}
-          onError={() => setHasError(true)}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-        />
-      </button>
+    <>
+      <img
+        src={src}
+        alt="Imagem da conversa"
+        className="max-h-72 w-full cursor-pointer rounded-lg border border-border/60 bg-muted/20 object-cover transition-opacity hover:opacity-90"
+        onClick={() => setOpen(true)}
+        onError={() => setHasError(true)}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+      />
 
-      <button
-        type="button"
-        onClick={() => setExpanded((current) => !current)}
-        className="text-[11px] text-primary/70 transition-colors hover:text-primary"
-      >
-        {expanded ? "Recolher imagem" : "Abrir na conversa"}
-      </button>
-    </div>
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setOpen(false)}
+        >
+          <img
+            src={src}
+            alt="Imagem ampliada"
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+      )}
+    </>
   );
 }
 
