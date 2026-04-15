@@ -21,7 +21,7 @@ serve(async (req) => {
     const body = await req.json();
 
     const rawTelefone = body.telefone || body.phone || body.from || body.wa_id;
-    const mensagem = body.mensagem || body.message || body.text || body.body || "";
+    const mensagem = body.mensagem || body.message || body.text || body.body || body.caption || "";
     const direcao = body.direcao || body.direction || "entrada";
     const vendedor = body.vendedor || body.seller || null;
 
