@@ -166,7 +166,7 @@ export function InactivityPopup() {
     }
 
     return eligible;
-  }, [contatos, lastMessages, customerPhones, pipelineEntries, processedPhones]);
+  }, [contatos, lastMessages, pipelineEntries, processedPhones]);
 
   useEffect(() => {
     setCurrentIndex(0);
