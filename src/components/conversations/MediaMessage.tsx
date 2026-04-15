@@ -161,21 +161,19 @@ function AudioPlayer({ src, mimeType }: { src: string; mimeType: string | null }
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [error, setError] = useState(false);
 
-  const toggle = async () => {
+  const toggle = () => {
     if (!audioRef.current) return;
 
     if (playing) {
       audioRef.current.pause();
       setPlaying(false);
-      return;
-    }
-
-    try {
-      await audioRef.current.play();
-      setPlaying(true);
-    } catch {
-      setPlaying(false);
+    } else {
+      audioRef.current.play().then(() => setPlaying(true)).catch(() => {
+        setPlaying(false);
+        setError(true);
+      });
     }
   };
 
@@ -191,7 +189,6 @@ function AudioPlayer({ src, mimeType }: { src: string; mimeType: string | null }
 
   const seekTo = (e: MouseEvent<HTMLDivElement>) => {
     if (!audioRef.current || !duration) return;
-
     const rect = e.currentTarget.getBoundingClientRect();
     const pct = (e.clientX - rect.left) / rect.width;
     audioRef.current.currentTime = pct * duration;
@@ -203,18 +200,40 @@ function AudioPlayer({ src, mimeType }: { src: string; mimeType: string | null }
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  if (error) {
+    return (
+      <a
+        href={src}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 rounded-xl bg-muted/30 p-3 text-xs text-primary/70 hover:text-primary transition-colors"
+      >
+        <Mic className="h-4 w-4" />
+        <span>Abrir áudio no navegador</span>
+      </a>
+    );
+  }
+
+  // Determine proper MIME for <source>
+  const resolvedMime = mimeType || (src.endsWith(".ogg") ? "audio/ogg; codecs=opus" : src.endsWith(".mp3") ? "audio/mpeg" : "audio/ogg");
+
   return (
     <div className="flex min-w-[200px] items-center gap-3 rounded-xl bg-muted/30 p-3">
       <audio
         ref={audioRef}
-        src={src}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={() => setPlaying(false)}
         onPause={() => setPlaying(false)}
         onPlay={() => setPlaying(true)}
+        onError={() => setError(true)}
         preload="metadata"
-      />
+        crossOrigin="anonymous"
+      >
+        <source src={src} type={resolvedMime} />
+        <source src={src} type="audio/ogg" />
+        <source src={src} type="audio/mpeg" />
+      </audio>
 
       <button
         type="button"
