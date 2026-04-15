@@ -57,18 +57,6 @@ function useLastIncomingMessages() {
   });
 }
 
-/** Fetch all customer phones */
-function useCustomerPhones() {
-  return useQuery({
-    queryKey: ["customer_phones"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("customers").select("telefone");
-      if (error) throw error;
-      return new Set((data ?? []).map((c) => c.telefone));
-    },
-    staleTime: 60_000,
-  });
-}
 
 /** Fetch leads_pipeline entries with manual save and popup control info */
 function useLeadsPipeline() {
