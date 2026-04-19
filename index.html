@@ -41,4 +41,21 @@
     <!-- NÃO MEXER -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
+  <body>
+  <script>
+    (function () {
+      const senhaCorreta = "1863Gabi";
+      const senhaDigitada = prompt("Digite a senha para acessar:");
+
+      if (senhaDigitada !== senhaCorreta) {
+        alert("Acesso negado!");
+        window.location.href = "https://google.com";
+      }
+    })();
+  </script>
+
+  <div id="root"></div>
+
+  <script type="module" src="/src/main.tsx"></script>
+</body>
 </html>
