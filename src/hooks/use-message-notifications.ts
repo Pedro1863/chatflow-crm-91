@@ -126,6 +126,9 @@ export function useMessageNotifications() {
               ? msg.mensagem
               : `[${msg.type}] ${msg.mensagem || ""}`.trim();
 
+          // Notification sound
+          playNotificationSound();
+
           // In-app toast
           toast(title, { description: body });
 
