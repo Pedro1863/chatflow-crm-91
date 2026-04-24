@@ -3,15 +3,17 @@ import { ConversationList } from "@/components/conversations/ConversationList";
 import { ChatPanel } from "@/components/conversations/ChatPanel";
 import { ClientDetailPanel } from "@/components/conversations/ClientDetailPanel";
 import { InactivityPopup } from "@/components/conversations/InactivityPopup";
+import { markContatoAsRead } from "@/hooks/use-unread-messages";
 
 const ConversationsPage = () => {
   const [selectedContatoId, setSelectedContatoId] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
-  // Hide details when changing contact
+  // Hide details when changing contact + mark as read
   const handleSelect = (contatoId: string) => {
     setSelectedContatoId(contatoId);
     setShowDetails(false);
+    markContatoAsRead(contatoId);
   };
 
   return (

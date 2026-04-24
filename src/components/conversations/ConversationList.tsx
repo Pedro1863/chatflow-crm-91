@@ -1,4 +1,5 @@
 import { useContatos } from "@/hooks/use-crm-data";
+import { useUnreadCounts, useInitializeReadBaseline } from "@/hooks/use-unread-messages";
 import { Input } from "@/components/ui/input";
 import { Search, MessageSquare } from "lucide-react";
 import { useState } from "react";
@@ -19,6 +20,8 @@ const statusLabels: Record<string, string> = {
 
 export function ConversationList({ selectedId, onSelect }: Props) {
   const { data: contatos = [], isLoading } = useContatos();
+  const unreadCounts = useUnreadCounts();
+  useInitializeReadBaseline(contatos.map((c) => c.id));
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -66,6 +69,7 @@ export function ConversationList({ selectedId, onSelect }: Props) {
         ) : (
           filtered.map((contato) => {
             const isSelected = contato.id === selectedId;
+            const unread = unreadCounts[contato.id] || 0;
             return (
               <button
                 key={contato.id}
@@ -74,18 +78,23 @@ export function ConversationList({ selectedId, onSelect }: Props) {
                   isSelected ? "bg-muted border-l-2 border-l-primary" : "border-l-2 border-l-transparent"
                 }`}
               >
-                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <div className="relative h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <span className="text-sm font-bold text-primary">
                     {(contato.nome || contato.telefone)[0].toUpperCase()}
                   </span>
+                  {unread > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-md">
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-baseline">
-                    <span className="font-semibold text-sm truncate text-foreground">
+                    <span className={`text-sm truncate text-foreground ${unread > 0 ? "font-bold" : "font-semibold"}`}>
                       {contato.nome || contato.telefone}
                     </span>
                     {contato.ultima_interacao && (
-                      <span className="text-[11px] text-muted-foreground shrink-0 ml-2">
+                      <span className={`text-[11px] shrink-0 ml-2 ${unread > 0 ? "text-primary font-semibold" : "text-muted-foreground"}`}>
                         {formatDistanceToNow(new Date(contato.ultima_interacao), {
                           addSuffix: true,
                           locale: ptBR,

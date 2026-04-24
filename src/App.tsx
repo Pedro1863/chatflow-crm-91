@@ -10,8 +10,14 @@ import ClientsPage from "./pages/ClientsPage";
 import SettingsPage from "./pages/SettingsPage";
 import SalesDashboardPage from "./pages/SalesDashboardPage";
 import NotFound from "./pages/NotFound";
+import { useMessageNotifications } from "@/hooks/use-message-notifications";
 
 const queryClient = new QueryClient();
+
+const NotificationsBootstrap = () => {
+  useMessageNotifications();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -19,6 +25,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <NotificationsBootstrap />
         <AppLayout>
           <Routes>
             <Route path="/" element={<ConversationsPage />} />
