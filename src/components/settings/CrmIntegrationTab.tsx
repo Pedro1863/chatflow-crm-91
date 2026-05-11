@@ -7,16 +7,12 @@ import ContactImportCard from "./ContactImportCard";
 import WebhookSettingsCard from "./WebhookSettingsCard";
 import ChatWebhookSettingsCard from "./ChatWebhookSettingsCard";
 import TemplateMessagesCard from "./TemplateMessagesCard";
-import WhatsAppEmbeddedSignupCard from "./WhatsAppEmbeddedSignupCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const CrmIntegrationTab = () => {
   return (
     <div className="space-y-6">
-      {/* WhatsApp Embedded Signup (Coexistence) */}
-      <WhatsAppEmbeddedSignupCard />
-
       {/* Importação de pedidos */}
       <OrderImportCard />
 

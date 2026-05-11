@@ -586,48 +586,6 @@ export type Database = {
           },
         ]
       }
-      whatsapp_accounts: {
-        Row: {
-          business_id: string | null
-          created_at: string
-          display_phone_number: string | null
-          id: string
-          label: string | null
-          phone_number_id: string | null
-          raw_payload: Json | null
-          signup_code: string | null
-          status: string
-          updated_at: string
-          waba_id: string | null
-        }
-        Insert: {
-          business_id?: string | null
-          created_at?: string
-          display_phone_number?: string | null
-          id?: string
-          label?: string | null
-          phone_number_id?: string | null
-          raw_payload?: Json | null
-          signup_code?: string | null
-          status?: string
-          updated_at?: string
-          waba_id?: string | null
-        }
-        Update: {
-          business_id?: string | null
-          created_at?: string
-          display_phone_number?: string | null
-          id?: string
-          label?: string | null
-          phone_number_id?: string | null
-          raw_payload?: Json | null
-          signup_code?: string | null
-          status?: string
-          updated_at?: string
-          waba_id?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
