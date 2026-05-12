@@ -32,6 +32,15 @@ serve(async (req) => {
     const mime_type = body.mime_type || null;
     const file_name = body.file_name || null;
 
+    // WhatsApp account identification
+    // Accept multiple shapes: top-level, or Meta's nested metadata
+    const phoneNumberId =
+      body.phone_number_id ||
+      body.phoneNumberId ||
+      body?.metadata?.phone_number_id ||
+      body?.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id ||
+      null;
+
     if (!rawTelefone) {
       return new Response(JSON.stringify({ error: "telefone is required" }), {
         status: 400,
@@ -40,6 +49,17 @@ serve(async (req) => {
     }
 
     const telefone = normalizeBrazilPhoneE164(rawTelefone);
+
+    // Resolve account
+    let whatsappAccountId: string | null = null;
+    if (phoneNumberId) {
+      const { data: acc } = await supabase
+        .from("whatsapp_accounts")
+        .select("id")
+        .eq("phone_number_id", phoneNumberId)
+        .maybeSingle();
+      whatsappAccountId = acc?.id || null;
+    }
 
     const { data: contatos } = await supabase
       .from("contatos")
@@ -59,6 +79,7 @@ serve(async (req) => {
           empresa: body.empresa || null,
           cidade: body.cidade || null,
           origem: body.origem || "WhatsApp",
+          whatsapp_account_id: whatsappAccountId,
         })
         .select()
         .single();
@@ -68,7 +89,10 @@ serve(async (req) => {
 
     await supabase
       .from("contatos")
-      .update({ ultima_interacao: new Date().toISOString() })
+      .update({
+        ultima_interacao: new Date().toISOString(),
+        ...(whatsappAccountId ? { whatsapp_account_id: whatsappAccountId } : {}),
+      })
       .eq("id", contato.id);
 
     const { error: msgErr } = await supabase.from("mensagens").insert({
@@ -82,6 +106,7 @@ serve(async (req) => {
       media_id,
       mime_type,
       file_name,
+      whatsapp_account_id: whatsappAccountId,
     });
 
     if (msgErr) throw msgErr;
