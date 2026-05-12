@@ -1,6 +1,46 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { normalizeBrazilPhoneE164 } from "../_shared/phone.ts";
+
+// Standalone phone normalization — no external imports
+function normalizeBrazilPhoneE164(rawPhone: string | null | undefined): string {
+  if (!rawPhone) return "";
+
+  const trimmed = rawPhone.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("bling_")) return trimmed;
+
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits) return trimmed;
+
+  // Already in correct format: 55 + DDD(2) + 9digits = 13 digits
+  if (/^55\d{11}$/.test(digits)) return digits;
+
+  // 55 + DDD(2) + 8 digits (mobile missing the leading 9)
+  if (/^55\d{10}$/.test(digits)) {
+    const ddd = digits.slice(2, 4);
+    const local = digits.slice(4);
+    if (/^[6-9]/.test(local)) {
+      return `55${ddd}9${local}`;
+    }
+    return digits;
+  }
+
+  // Local number without country code: 11 digits (DDD + 9 + 8)
+  if (/^\d{11}$/.test(digits)) return `55${digits}`;
+
+  // Local number without country code: 10 digits (DDD + 8)
+  if (/^\d{10}$/.test(digits)) {
+    const ddd = digits.slice(0, 2);
+    const local = digits.slice(2);
+    if (/^[6-9]/.test(local)) {
+      return `55${ddd}9${local}`;
+    }
+    return `55${digits}`;
+  }
+
+  return trimmed;
+}
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
