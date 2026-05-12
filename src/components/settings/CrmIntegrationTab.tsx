@@ -65,7 +65,8 @@ const CrmIntegrationTab = () => {
   "nome": "Maria Silva",
   "empresa": "Empresa X",
   "cidade": "São Paulo",
-  "origem": "whatsapp"
+  "origem": "whatsapp",
+  "phone_number_id": "<id do número WA que recebeu — POA ou Alvorada>"
 }`}
             </pre>
           </div>
