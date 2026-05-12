@@ -82,6 +82,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
         contato_id: contatoId!,
         telefone: contato.telefone,
         mensagem: text.trim(),
+        whatsapp_account_id: accountOverride === "auto" ? null : accountOverride,
       },
       {
         onError: (err) => {
@@ -92,18 +93,28 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
     setText("");
   };
 
+  const contatoAccountId = (contato as any)?.whatsapp_account_id as string | null | undefined;
+  const contatoAccount = contatoAccountId ? accounts.find((a) => a.id === contatoAccountId) : null;
+
   return (
     <div className="flex-1 flex flex-col min-w-0">
       {/* Header */}
       <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-card/50 backdrop-blur-sm">
-        <div className="flex items-center">
-          <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center mr-3">
+        <div className="flex items-center min-w-0">
+          <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center mr-3 shrink-0">
             <span className="text-sm font-bold text-primary">
               {(contato?.nome || contato?.telefone || "?")[0].toUpperCase()}
             </span>
           </div>
-          <div>
-            <p className="font-semibold text-sm text-foreground">{contato?.nome || contato?.telefone}</p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-sm text-foreground truncate">{contato?.nome || contato?.telefone}</p>
+              {contatoAccount && (
+                <Badge variant="outline" className="gap-1 text-[10px] shrink-0">
+                  <Phone className="h-2.5 w-2.5" /> {contatoAccount.label}
+                </Badge>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">{contato?.telefone}</p>
           </div>
         </div>
