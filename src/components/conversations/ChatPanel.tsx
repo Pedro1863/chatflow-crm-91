@@ -1,12 +1,15 @@
 import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
+import { useWhatsappAccounts } from "@/hooks/use-whatsapp-accounts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { MediaMessage } from "./MediaMessage";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 
