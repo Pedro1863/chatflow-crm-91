@@ -26,9 +26,17 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const loadMore = useLoadMoreMensagens(contatoId);
   const { data: contato } = useContato(contatoId);
   const sendMensagem = useSendMensagem();
+  const { data: accounts = [] } = useWhatsappAccounts();
+  const activeAccounts = accounts.filter((a) => a.is_active);
   const [text, setText] = useState("");
+  const [accountOverride, setAccountOverride] = useState<string | "auto">("auto");
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Reset override when contact changes
+  useEffect(() => {
+    setAccountOverride("auto");
+  }, [contatoId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
