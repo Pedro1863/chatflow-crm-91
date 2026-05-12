@@ -202,7 +202,13 @@ export function setN8nWebhookUrl(_url: string) {
 export function useSendMensagem() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (msg: { contato_id: string; telefone: string; mensagem: string; vendedor?: string }) => {
+    mutationFn: async (msg: {
+      contato_id: string;
+      telefone: string;
+      mensagem: string;
+      vendedor?: string;
+      whatsapp_account_id?: string | null;
+    }) => {
       // Get chat webhook URL from DB
       const { data: chatUrlData, error: chatUrlError } = await supabase
         .from("system_settings")
@@ -215,6 +221,37 @@ export function useSendMensagem() {
         throw new Error("URL do webhook de chat não configurada. Vá em Configurações para definir.");
       }
 
+      // Resolve account: explicit > contato's account > default
+      let accountId = msg.whatsapp_account_id || null;
+      if (!accountId) {
+        const { data: c } = await supabase
+          .from("contatos")
+          .select("whatsapp_account_id")
+          .eq("id", msg.contato_id)
+          .maybeSingle();
+        accountId = (c as any)?.whatsapp_account_id || null;
+      }
+      if (!accountId) {
+        const { data: def } = await supabase
+          .from("whatsapp_accounts")
+          .select("id")
+          .eq("is_default", true)
+          .maybeSingle();
+        accountId = def?.id || null;
+      }
+
+      let phoneNumberId: string | null = null;
+      let accountLabel: string | null = null;
+      if (accountId) {
+        const { data: acc } = await supabase
+          .from("whatsapp_accounts")
+          .select("phone_number_id, label")
+          .eq("id", accountId)
+          .maybeSingle();
+        phoneNumberId = acc?.phone_number_id || null;
+        accountLabel = acc?.label || null;
+      }
+
       // 1. Save outgoing message to Supabase
       const { data: inserted, error: dbError } = await supabase.from("mensagens").insert({
         contato_id: msg.contato_id,
@@ -222,7 +259,8 @@ export function useSendMensagem() {
         mensagem: msg.mensagem,
         direcao: "saida",
         vendedor: msg.vendedor || null,
-      }).select("id").single();
+        whatsapp_account_id: accountId,
+      } as any).select("id").single();
       if (dbError) throw dbError;
 
       // 2. Update ultima_interacao
@@ -231,7 +269,7 @@ export function useSendMensagem() {
         .update({ ultima_interacao: new Date().toISOString() })
         .eq("id", msg.contato_id);
 
-      // 3. Send to n8n webhook (includes our internal message ID)
+      // 3. Send to n8n webhook (includes our internal message ID + account info)
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -239,6 +277,9 @@ export function useSendMensagem() {
           telefone: msg.telefone,
           mensagem: msg.mensagem,
           mensagem_id: inserted.id,
+          phone_number_id: phoneNumberId,
+          whatsapp_account_id: accountId,
+          account_label: accountLabel,
         }),
       });
 

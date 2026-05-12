@@ -7,12 +7,16 @@ import ContactImportCard from "./ContactImportCard";
 import WebhookSettingsCard from "./WebhookSettingsCard";
 import ChatWebhookSettingsCard from "./ChatWebhookSettingsCard";
 import TemplateMessagesCard from "./TemplateMessagesCard";
+import WhatsappAccountsCard from "./WhatsappAccountsCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const CrmIntegrationTab = () => {
   return (
     <div className="space-y-6">
+      {/* Contas WhatsApp (multi-número) */}
+      <WhatsappAccountsCard />
+
       {/* Importação de pedidos */}
       <OrderImportCard />
 
@@ -61,7 +65,8 @@ const CrmIntegrationTab = () => {
   "nome": "Maria Silva",
   "empresa": "Empresa X",
   "cidade": "São Paulo",
-  "origem": "whatsapp"
+  "origem": "whatsapp",
+  "phone_number_id": "<id do número WA que recebeu — POA ou Alvorada>"
 }`}
             </pre>
           </div>
