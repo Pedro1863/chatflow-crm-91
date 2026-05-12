@@ -107,6 +107,7 @@ export type Database = {
           status_funil: string
           telefone: string
           ultima_interacao: string | null
+          whatsapp_account_id: string | null
         }
         Insert: {
           cidade?: string | null
@@ -119,6 +120,7 @@ export type Database = {
           status_funil?: string
           telefone: string
           ultima_interacao?: string | null
+          whatsapp_account_id?: string | null
         }
         Update: {
           cidade?: string | null
@@ -131,6 +133,7 @@ export type Database = {
           status_funil?: string
           telefone?: string
           ultima_interacao?: string | null
+          whatsapp_account_id?: string | null
         }
         Relationships: []
       }
@@ -318,6 +321,7 @@ export type Database = {
           status: string
           telefone: string
           template_name: string
+          whatsapp_account_id: string | null
           whatsapp_message_id: string | null
         }
         Insert: {
@@ -328,6 +332,7 @@ export type Database = {
           status?: string
           telefone: string
           template_name: string
+          whatsapp_account_id?: string | null
           whatsapp_message_id?: string | null
         }
         Update: {
@@ -338,6 +343,7 @@ export type Database = {
           status?: string
           telefone?: string
           template_name?: string
+          whatsapp_account_id?: string | null
           whatsapp_message_id?: string | null
         }
         Relationships: [
@@ -365,6 +371,7 @@ export type Database = {
           timestamp: string
           type: string
           vendedor: string | null
+          whatsapp_account_id: string | null
           whatsapp_message_id: string | null
         }
         Insert: {
@@ -381,6 +388,7 @@ export type Database = {
           timestamp?: string
           type?: string
           vendedor?: string | null
+          whatsapp_account_id?: string | null
           whatsapp_message_id?: string | null
         }
         Update: {
@@ -397,6 +405,7 @@ export type Database = {
           timestamp?: string
           type?: string
           vendedor?: string | null
+          whatsapp_account_id?: string | null
           whatsapp_message_id?: string | null
         }
         Relationships: [
@@ -559,6 +568,7 @@ export type Database = {
           sent_date: string
           telefone: string
           template_name: string
+          whatsapp_account_id: string | null
         }
         Insert: {
           customer_id: string
@@ -567,6 +577,7 @@ export type Database = {
           sent_date?: string
           telefone: string
           template_name: string
+          whatsapp_account_id?: string | null
         }
         Update: {
           customer_id?: string
@@ -575,6 +586,7 @@ export type Database = {
           sent_date?: string
           telefone?: string
           template_name?: string
+          whatsapp_account_id?: string | null
         }
         Relationships: [
           {
@@ -592,6 +604,8 @@ export type Database = {
           created_at: string
           display_phone_number: string | null
           id: string
+          is_active: boolean
+          is_default: boolean
           label: string | null
           phone_number_id: string | null
           raw_payload: Json | null
@@ -605,6 +619,8 @@ export type Database = {
           created_at?: string
           display_phone_number?: string | null
           id?: string
+          is_active?: boolean
+          is_default?: boolean
           label?: string | null
           phone_number_id?: string | null
           raw_payload?: Json | null
@@ -618,6 +634,8 @@ export type Database = {
           created_at?: string
           display_phone_number?: string | null
           id?: string
+          is_active?: boolean
+          is_default?: boolean
           label?: string | null
           phone_number_id?: string | null
           raw_payload?: Json | null
