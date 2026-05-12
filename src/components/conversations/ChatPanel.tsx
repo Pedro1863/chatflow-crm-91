@@ -191,6 +191,28 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
         <div ref={bottomRef} />
       </div>
 
+      {/* Account selector (only when 2+ accounts exist) */}
+      {activeAccounts.length > 1 && (
+        <div className="px-3 pt-2 pb-1 border-t border-border bg-card/30 flex items-center gap-2">
+          <span className="text-[11px] text-muted-foreground">Enviar via:</span>
+          <Select value={accountOverride} onValueChange={(v) => setAccountOverride(v as any)}>
+            <SelectTrigger className="h-7 text-xs w-auto min-w-[140px] gap-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="auto">
+                Automático {contatoAccount ? `(${contatoAccount.label})` : "(padrão)"}
+              </SelectItem>
+              {activeAccounts.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.label} {a.is_default ? "★" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Input */}
       <div className="p-3 border-t border-border bg-card/50 backdrop-blur-sm flex gap-2 items-center">
         <Popover>
