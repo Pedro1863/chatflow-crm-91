@@ -111,7 +111,11 @@ export function useMarkLeadConverted() {
       if (attempts && attempts.length > 0) {
         const { error } = await supabase
           .from("leads_pipeline")
-          .update({ convertido: true } as any)
+          .update({
+            convertido: true,
+            popup_exibido: true,
+            popup_ciclo_data: new Date().toISOString().slice(0, 10),
+          } as any)
           .eq("id", attempts[0].id);
         if (error) throw error;
       }
