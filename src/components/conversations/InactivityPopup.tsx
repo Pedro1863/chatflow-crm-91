@@ -146,12 +146,24 @@ export function InactivityPopup() {
     }
 
     for (const contato of contatos) {
-      // Contacts already marked as customer should never enter the inactivity popup,
-      // even if the leads_pipeline cache is still catching up after an RPC/import.
-      if (contato.status_funil === "cliente") continue;
-
       // Skip if already processed this session
       if (processedPhones.has(contato.telefone)) continue;
+
+      // Check inactivity
+      const lastMsgTime = lastMessages.get(contato.id);
+      if (!lastMsgTime) continue;
+
+      // Cliente: bloqueia popup, EXCETO se mandou nova mensagem depois de virar cliente.
+      // Nesse caso o ciclo reinicia e o popup volta a aparecer.
+      if (contato.status_funil === "cliente") {
+        const dataConversao = customersConversao?.get(contato.telefone) ?? null;
+        if (!dataConversao) continue; // sem data de conversão → bloqueia por segurança
+        const lastMsgMs = new Date(lastMsgTime).getTime();
+        const conversaoMs = new Date(dataConversao).getTime();
+        if (lastMsgMs <= conversaoMs) continue; // não mandou nada novo → segue bloqueado
+        // mandou msg após virar cliente → cai no fluxo normal abaixo (pode reabrir popup)
+      }
+
 
       // Check inactivity
       const lastMsgTime = lastMessages.get(contato.id);
