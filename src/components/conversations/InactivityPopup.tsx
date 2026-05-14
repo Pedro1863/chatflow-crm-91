@@ -164,10 +164,6 @@ export function InactivityPopup() {
         // mandou msg após virar cliente → cai no fluxo normal abaixo (pode reabrir popup)
       }
 
-
-      // Check inactivity
-      const lastMsgTime = lastMessages.get(contato.id);
-      if (!lastMsgTime) continue;
       const elapsed = now - new Date(lastMsgTime).getTime();
       if (elapsed < INACTIVITY_MS) continue;
 
