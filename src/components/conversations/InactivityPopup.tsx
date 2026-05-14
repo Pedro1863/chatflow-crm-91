@@ -74,24 +74,6 @@ function useLeadsPipeline() {
   });
 }
 
-/** Fetch customers' data_conversao map (for clients whose popup may restart on new message) */
-function useCustomersConversao() {
-  return useQuery({
-    queryKey: ["customers_conversao_all"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("telefone, data_conversao");
-      if (error) throw error;
-      const map = new Map<string, string | null>();
-      for (const row of data ?? []) {
-        if (row.telefone) map.set(row.telefone, row.data_conversao);
-      }
-      return map;
-    },
-    staleTime: 60_000,
-  });
-}
 
 
 
@@ -99,7 +81,7 @@ export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
   const { data: lastMessages } = useLastIncomingMessages();
   const { data: pipelineEntries } = useLeadsPipeline();
-  const { data: customersConversao } = useCustomersConversao();
+  
   const registerAttempt = useRegisterLeadAttempt();
   const markPopupShown = useMarkPopupShown();
   const qc = useQueryClient();
@@ -153,15 +135,15 @@ export function InactivityPopup() {
       const lastMsgTime = lastMessages.get(contato.id);
       if (!lastMsgTime) continue;
 
-      // Cliente: bloqueia popup, EXCETO se mandou nova mensagem depois de virar cliente.
-      // Nesse caso o ciclo reinicia e o popup volta a aparecer.
+      // Cliente: bloqueia popup, EXCETO se mandou nova mensagem depois do último ciclo do popup.
+      // Usa popup_ciclo_data do leads_pipeline (atualizado pelo RPC ao virar cliente).
       if (contato.status_funil === "cliente") {
-        const dataConversao = customersConversao?.get(contato.telefone) ?? null;
-        if (!dataConversao) continue; // sem data de conversão → bloqueia por segurança
+        const cicloData = phoneState.get(contato.telefone)?.popupCicloData ?? null;
+        if (!cicloData) continue; // sem ciclo registrado → bloqueia por segurança
         const lastMsgMs = new Date(lastMsgTime).getTime();
-        const conversaoMs = new Date(dataConversao).getTime();
-        if (lastMsgMs <= conversaoMs) continue; // não mandou nada novo → segue bloqueado
-        // mandou msg após virar cliente → cai no fluxo normal abaixo (pode reabrir popup)
+        const cicloMs = new Date(cicloData + "T23:59:59").getTime();
+        if (lastMsgMs <= cicloMs) continue; // não mandou nada novo desde o ciclo → bloqueado
+        // mandou msg após o ciclo → cai no fluxo normal abaixo (pode reabrir popup)
       }
 
       const elapsed = now - new Date(lastMsgTime).getTime();
