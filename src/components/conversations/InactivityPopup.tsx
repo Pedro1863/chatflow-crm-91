@@ -74,24 +74,6 @@ function useLeadsPipeline() {
   });
 }
 
-/** Fetch customers' data_conversao map (for clients whose popup may restart on new message) */
-function useCustomersConversao() {
-  return useQuery({
-    queryKey: ["customers_conversao_all"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("telefone, data_conversao");
-      if (error) throw error;
-      const map = new Map<string, string | null>();
-      for (const row of data ?? []) {
-        if (row.telefone) map.set(row.telefone, row.data_conversao);
-      }
-      return map;
-    },
-    staleTime: 60_000,
-  });
-}
 
 
 
