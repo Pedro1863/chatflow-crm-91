@@ -98,7 +98,9 @@ export function useRegisterLeadAttempt() {
 export function useMarkLeadConverted() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (telefone: string) => {
+    mutationFn: async (params: { telefone: string; nome?: string | null; origem?: string | null } | string) => {
+      const telefone = typeof params === "string" ? params : params.telefone;
+      const nome = typeof params === "string" ? null : params.nome ?? null;
       // Find the most recent unconverted attempt
       const { data: attempts } = await supabase
         .from("leads_pipeline")
@@ -115,8 +117,28 @@ export function useMarkLeadConverted() {
             convertido: true,
             popup_exibido: true,
             popup_ciclo_data: new Date().toISOString().slice(0, 10),
+            data_interacao: new Date().toISOString(),
+            data_ultima_interacao: new Date().toISOString(),
           } as any)
           .eq("id", attempts[0].id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("leads_pipeline")
+          .insert({
+            telefone,
+            nome,
+            etapa_pipeline: "proposta_sem_resposta",
+            status: "perdido",
+            convertido: true,
+            salvo_manualmente: false,
+            origem_tentativa: "manual",
+            popup_exibido: true,
+            popup_ciclo_data: new Date().toISOString().slice(0, 10),
+            data_interacao: new Date().toISOString(),
+            data_entrada: new Date().toISOString(),
+            data_ultima_interacao: new Date().toISOString(),
+          } as any);
         if (error) throw error;
       }
       return true;

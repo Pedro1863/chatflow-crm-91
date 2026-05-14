@@ -64,7 +64,7 @@ export function ClientDetailPanel({ contatoId }: Props) {
         onSuccess: () => {
           toast.success("Contato atualizado!");
           if (form.status_funil === "cliente") {
-            markConverted.mutate(contato.telefone);
+            markConverted.mutate({ telefone: contato.telefone, nome: form.nome || contato.nome });
           } else {
             const etapa = stageToEtapa[form.status_funil] || "primeiro_contato_sem_resposta";
             registerAttempt.mutate({
