@@ -81,7 +81,7 @@ export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
   const { data: lastMessages } = useLastIncomingMessages();
   const { data: pipelineEntries } = useLeadsPipeline();
-  const { data: customersConversao } = useCustomersConversao();
+  
   const registerAttempt = useRegisterLeadAttempt();
   const markPopupShown = useMarkPopupShown();
   const qc = useQueryClient();
