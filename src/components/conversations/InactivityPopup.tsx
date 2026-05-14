@@ -126,6 +126,10 @@ export function InactivityPopup() {
     }
 
     for (const contato of contatos) {
+      // Contacts already marked as customer should never enter the inactivity popup,
+      // even if the leads_pipeline cache is still catching up after an RPC/import.
+      if (contato.status_funil === "cliente") continue;
+
       // Skip if already processed this session
       if (processedPhones.has(contato.telefone)) continue;
 
