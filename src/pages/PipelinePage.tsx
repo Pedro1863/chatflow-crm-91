@@ -52,7 +52,7 @@ const PipelinePage = () => {
 
           if (newStage === "cliente") {
             // Mark latest attempt as converted
-            markConverted.mutate(contato.telefone);
+            markConverted.mutate({ telefone: contato.telefone, nome: contato.nome });
           } else {
             // Register as pipeline attempt (only on intentional stage changes)
             const etapa = stageToEtapa[newStage] || stageToEtapa[oldStage] || "primeiro_contato_sem_resposta";
