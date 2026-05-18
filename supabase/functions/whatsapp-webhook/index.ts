@@ -153,6 +153,17 @@ serve(async (req) => {
       })
       .eq("id", contato.id);
 
+    // Try to resolve internal id of the message being replied to
+    let reply_to_id: string | null = null;
+    if (reply_to_wamid) {
+      const { data: orig } = await supabase
+        .from("mensagens")
+        .select("id")
+        .eq("whatsapp_message_id", reply_to_wamid)
+        .maybeSingle();
+      reply_to_id = orig?.id || null;
+    }
+
     const { error: msgErr } = await supabase.from("mensagens").insert({
       contato_id: contato.id,
       telefone,
@@ -165,6 +176,9 @@ serve(async (req) => {
       mime_type,
       file_name,
       whatsapp_account_id: whatsappAccountId,
+      whatsapp_message_id,
+      reply_to_wamid,
+      reply_to_id,
     });
 
     if (msgErr) throw msgErr;
