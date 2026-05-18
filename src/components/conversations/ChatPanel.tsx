@@ -1,11 +1,13 @@
 import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato, type Mensagem } from "@/hooks/use-crm-data";
 import { useWhatsappAccounts } from "@/hooks/use-whatsapp-accounts";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft } from "lucide-react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft, Paperclip } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { MediaMessage } from "./MediaMessage";
+
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,9 +33,73 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const [text, setText] = useState("");
   const [accountOverride, setAccountOverride] = useState<string | "auto">("auto");
   const [replyingTo, setReplyingTo] = useState<Mensagem | null>(null);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const detectType = (file: File): string => {
+    const m = file.type.toLowerCase();
+    if (m.startsWith("image/")) return m.includes("webp") && file.name.toLowerCase().endsWith(".webp") ? "sticker" : "image";
+    if (m.startsWith("video/")) return "video";
+    if (m.startsWith("audio/")) return "audio";
+    return "document";
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !contato || !contatoId) return;
+
+    // 25MB safety cap (WhatsApp limit for most types is ~16-100MB; keep conservative)
+    if (file.size > 64 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 64 MB)");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+      const safeBase = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 60);
+      const path = `${contatoId}/${Date.now()}-${safeBase}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("whatsapp-media")
+        .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("whatsapp-media").getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
+      const type = detectType(file);
+      const caption = text.trim();
+
+      sendMensagem.mutate(
+        {
+          contato_id: contatoId,
+          telefone: contato.telefone,
+          mensagem: caption || file.name,
+          type,
+          media_url: publicUrl,
+          mime_type: file.type || null,
+          file_name: file.name,
+          whatsapp_account_id: accountOverride === "auto" ? null : accountOverride,
+          reply_to_wamid: replyingTo?.whatsapp_message_id || null,
+          reply_to_id: replyingTo?.id || null,
+        },
+        {
+          onError: (err) => toast.error(err instanceof Error ? err.message : "Erro ao enviar mídia"),
+        }
+      );
+      setText("");
+      setReplyingTo(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha no upload");
+    } finally {
+      setUploading(false);
+    }
+  };
+
 
   // Reset override + reply when contact changes
   useEffect(() => {
@@ -317,7 +383,29 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
 
       {/* Input */}
       <div className="p-3 border-t border-border bg-card/50 backdrop-blur-sm flex gap-2 items-center">
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={handleFileSelected}
+          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 h-9 w-9 rounded-xl"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading || sendMensagem.isPending}
+          title="Anexar arquivo"
+        >
+          {uploading ? (
+            <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+          ) : (
+            <Paperclip className="h-5 w-5 text-muted-foreground" />
+          )}
+        </Button>
         <Popover>
+
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 rounded-xl">
               <Smile className="h-5 w-5 text-muted-foreground" />

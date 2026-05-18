@@ -212,7 +212,13 @@ export function useSendMensagem() {
       whatsapp_account_id?: string | null;
       reply_to_wamid?: string | null;
       reply_to_id?: string | null;
+      type?: string;
+      media_url?: string | null;
+      mime_type?: string | null;
+      file_name?: string | null;
     }) => {
+      const msgType = msg.type || "text";
+
       // Get chat webhook URL from DB
       const { data: chatUrlData, error: chatUrlError } = await supabase
         .from("system_settings")
@@ -266,6 +272,10 @@ export function useSendMensagem() {
         whatsapp_account_id: accountId,
         reply_to_wamid: msg.reply_to_wamid || null,
         reply_to_id: msg.reply_to_id || null,
+        type: msgType,
+        media_url: msg.media_url || null,
+        mime_type: msg.mime_type || null,
+        file_name: msg.file_name || null,
       } as any).select("id").single();
       if (dbError) throw dbError;
 
@@ -275,7 +285,7 @@ export function useSendMensagem() {
         .update({ ultima_interacao: new Date().toISOString() })
         .eq("id", msg.contato_id);
 
-      // 3. Send to n8n webhook (includes our internal message ID + account info + reply context)
+      // 3. Send to n8n webhook (includes our internal message ID + account info + reply context + media)
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -286,7 +296,15 @@ export function useSendMensagem() {
           phone_number_id: phoneNumberId,
           whatsapp_account_id: accountId,
           account_label: accountLabel,
-          // Reply context for Meta API: context.message_id = wamid being replied to
+          type: msgType,
+          ...(msg.media_url
+            ? {
+                media_url: msg.media_url,
+                mime_type: msg.mime_type,
+                file_name: msg.file_name,
+                caption: msg.mensagem || null,
+              }
+            : {}),
           ...(msg.reply_to_wamid
             ? { context: { message_id: msg.reply_to_wamid }, reply_to_wamid: msg.reply_to_wamid }
             : {}),
@@ -300,6 +318,7 @@ export function useSendMensagem() {
 
       return { success: true };
     },
+
     onMutate: async (vars) => {
       await qc.cancelQueries({ queryKey: ["mensagens", vars.contato_id] });
       const previous = qc.getQueryData(["mensagens", vars.contato_id]);
@@ -314,13 +333,14 @@ export function useSendMensagem() {
         timestamp: new Date().toISOString(),
         status: "sent",
         whatsapp_message_id: null,
-        type: "text",
-        media_url: null,
+        type: vars.type || "text",
+        media_url: vars.media_url || null,
         media_id: null,
-        mime_type: null,
-        file_name: null,
+        mime_type: vars.mime_type || null,
+        file_name: vars.file_name || null,
         reply_to_wamid: vars.reply_to_wamid || null,
         reply_to_id: vars.reply_to_id || null,
+
       };
 
       qc.setQueryData(["mensagens", vars.contato_id], (old: any) => {
