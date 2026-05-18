@@ -30,6 +30,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const loadMore = useLoadMoreMensagens(contatoId);
   const { data: contato } = useContato(contatoId);
   const sendMensagem = useSendMensagem();
+  const qc = useQueryClient();
   const { data: accounts = [] } = useWhatsappAccounts();
   const { data: mediaUploadUrl } = useSystemSetting("n8n_media_upload_webhook_url");
   const activeAccounts = accounts.filter((a) => a.is_active);
