@@ -1,10 +1,10 @@
-import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato } from "@/hooks/use-crm-data";
+import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato, type Mensagem } from "@/hooks/use-crm-data";
 import { useWhatsappAccounts } from "@/hooks/use-whatsapp-accounts";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft } from "lucide-react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { MediaMessage } from "./MediaMessage";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -30,17 +30,31 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const activeAccounts = accounts.filter((a) => a.is_active);
   const [text, setText] = useState("");
   const [accountOverride, setAccountOverride] = useState<string | "auto">("auto");
+  const [replyingTo, setReplyingTo] = useState<Mensagem | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset override when contact changes
+  // Reset override + reply when contact changes
   useEffect(() => {
     setAccountOverride("auto");
+    setReplyingTo(null);
   }, [contatoId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [mensagens.length]);
+
+  // Map for quick lookup of original messages by wamid/id (for rendering quoted previews)
+  const messageIndex = useMemo(() => {
+    const byWamid = new Map<string, Mensagem>();
+    const byId = new Map<string, Mensagem>();
+    mensagens.forEach((m) => {
+      if (m.whatsapp_message_id) byWamid.set(m.whatsapp_message_id, m);
+      byId.set(m.id, m);
+    });
+    return { byWamid, byId };
+  }, [mensagens]);
 
   const handleLoadMore = () => {
     const scrollEl = scrollContainerRef.current;
@@ -49,7 +63,6 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       { currentCount: mensagens.length, total: totalCount },
       {
         onSuccess: () => {
-          // Preserve scroll position after prepending older messages
           requestAnimationFrame(() => {
             if (scrollEl) {
               const newHeight = scrollEl.scrollHeight;
@@ -83,6 +96,8 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
         telefone: contato.telefone,
         mensagem: text.trim(),
         whatsapp_account_id: accountOverride === "auto" ? null : accountOverride,
+        reply_to_wamid: replyingTo?.whatsapp_message_id || null,
+        reply_to_id: replyingTo?.id || null,
       },
       {
         onError: (err) => {
@@ -91,6 +106,45 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       }
     );
     setText("");
+    setReplyingTo(null);
+  };
+
+  const handleStartReply = (msg: Mensagem) => {
+    setReplyingTo(msg);
+    inputRef.current?.focus();
+  };
+
+  const scrollToMessage = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary");
+      setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 1500);
+    }
+  };
+
+  const renderQuoted = (msg: Mensagem) => {
+    if (!msg.reply_to_wamid && !msg.reply_to_id) return null;
+    const original =
+      (msg.reply_to_id && messageIndex.byId.get(msg.reply_to_id)) ||
+      (msg.reply_to_wamid && messageIndex.byWamid.get(msg.reply_to_wamid)) ||
+      null;
+    const preview = original?.mensagem || `[${original?.type || "mensagem"}]`;
+    const authorLabel = original
+      ? original.direcao === "saida"
+        ? "Você"
+        : contato?.nome || contato?.telefone || "Cliente"
+      : "Mensagem original";
+    return (
+      <button
+        type="button"
+        onClick={() => original && scrollToMessage(original.id)}
+        className="w-full text-left mb-1.5 px-2 py-1.5 rounded-md bg-muted/50 border-l-2 border-primary/60 hover:bg-muted transition-colors"
+      >
+        <p className="text-[11px] font-semibold text-primary truncate">{authorLabel}</p>
+        <p className="text-xs text-muted-foreground truncate">{preview || "..."}</p>
+      </button>
+    );
   };
 
   const contatoAccountId = (contato as any)?.whatsapp_account_id as string | null | undefined;
@@ -127,7 +181,6 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
 
       {/* Messages */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin bg-background">
-        {/* Load more button */}
         {hasMore && (
           <div className="flex justify-center pb-2">
             <Button
@@ -149,8 +202,20 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
         {mensagens.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.direcao === "saida" ? "justify-end" : "justify-start"}`}
+            id={`msg-${msg.id}`}
+            className={`group flex items-center gap-1.5 ${msg.direcao === "saida" ? "justify-end" : "justify-start"} transition-all rounded-lg`}
           >
+            {msg.direcao === "saida" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleStartReply(msg)}
+                className="h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Responder"
+              >
+                <CornerUpLeft className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            )}
             <div
               className={`max-w-[70%] rounded-2xl px-4 py-2.5 text-sm animate-fade-in transition-all ${
                 msg.direcao === "saida"
@@ -161,6 +226,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
               {msg.vendedor && msg.direcao === "saida" && (
                 <p className="text-xs font-semibold text-primary mb-1">{msg.vendedor}</p>
               )}
+              {renderQuoted(msg)}
               <MediaMessage
                 type={msg.type || "text"}
                 mediaUrl={msg.media_url}
@@ -186,12 +252,23 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
                 )}
               </div>
             </div>
+            {msg.direcao !== "saida" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleStartReply(msg)}
+                className="h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Responder"
+              >
+                <CornerUpLeft className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            )}
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
 
-      {/* Account selector (only when 2+ accounts exist) */}
+      {/* Account selector */}
       {activeAccounts.length > 1 && (
         <div className="px-3 pt-2 pb-1 border-t border-border bg-card/30 flex items-center gap-2">
           <span className="text-[11px] text-muted-foreground">Enviar via:</span>
@@ -210,6 +287,31 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+      )}
+
+      {/* Reply preview above input */}
+      {replyingTo && (
+        <div className="px-3 pt-2 border-t border-border bg-card/30">
+          <div className="flex items-start gap-2 p-2 rounded-lg bg-muted/50 border-l-2 border-primary">
+            <Reply className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-primary">
+                Respondendo {replyingTo.direcao === "saida" ? "você mesmo" : contato?.nome || contato?.telefone}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {replyingTo.mensagem || `[${replyingTo.type}]`}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setReplyingTo(null)}
+              className="h-6 w-6 rounded-md shrink-0"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -233,10 +335,14 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
           </PopoverContent>
         </Popover>
         <Input
-          placeholder="Digite uma mensagem..."
+          ref={inputRef}
+          placeholder={replyingTo ? "Digite sua resposta..." : "Digite uma mensagem..."}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSend();
+            if (e.key === "Escape") setReplyingTo(null);
+          }}
           className="bg-muted/50 border-border/50 rounded-xl"
         />
         <Button
