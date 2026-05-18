@@ -319,6 +319,8 @@ export function useSendMensagem() {
         media_id: null,
         mime_type: null,
         file_name: null,
+        reply_to_wamid: vars.reply_to_wamid || null,
+        reply_to_id: vars.reply_to_id || null,
       };
 
       qc.setQueryData(["mensagens", vars.contato_id], (old: any) => {
