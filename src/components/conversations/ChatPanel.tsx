@@ -1,6 +1,6 @@
 import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato, type Mensagem } from "@/hooks/use-crm-data";
 import { useWhatsappAccounts } from "@/hooks/use-whatsapp-accounts";
-import { supabase } from "@/integrations/supabase/client";
+import { useSystemSetting } from "@/hooks/use-system-settings";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const { data: contato } = useContato(contatoId);
   const sendMensagem = useSendMensagem();
   const { data: accounts = [] } = useWhatsappAccounts();
+  const { data: mediaUploadUrl } = useSystemSetting("n8n_media_upload_webhook_url");
   const activeAccounts = accounts.filter((a) => a.is_active);
   const [text, setText] = useState("");
   const [accountOverride, setAccountOverride] = useState<string | "auto">("auto");
@@ -52,7 +53,11 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
     e.target.value = "";
     if (!file || !contato || !contatoId) return;
 
-    // 25MB safety cap (WhatsApp limit for most types is ~16-100MB; keep conservative)
+    if (!mediaUploadUrl) {
+      toast.error("Configure o Webhook de Upload de Mídia (n8n) em Configurações");
+      return;
+    }
+
     if (file.size > 64 * 1024 * 1024) {
       toast.error("Arquivo muito grande (máx 64 MB)");
       return;
@@ -60,29 +65,54 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
 
     try {
       setUploading(true);
-      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
-      const safeBase = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 60);
-      const path = `${contatoId}/${Date.now()}-${safeBase}`;
-
-      const { error: upErr } = await supabase.storage
-        .from("whatsapp-media")
-        .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
-      if (upErr) throw upErr;
-
-      const { data: pub } = supabase.storage.from("whatsapp-media").getPublicUrl(path);
-      const publicUrl = pub.publicUrl;
       const type = detectType(file);
+
+      // Envia o arquivo pro n8n via multipart. O n8n grava no VPS e responde com a URL pública.
+      const form = new FormData();
+      form.append("file", file, file.name);
+      form.append("file_name", file.name);
+      form.append("mime_type", file.type || "application/octet-stream");
+      form.append("type", type);
+      form.append("telefone", contato.telefone);
+      form.append("contato_id", contatoId);
+      form.append(
+        "whatsapp_account_id",
+        accountOverride === "auto" ? "" : accountOverride
+      );
+
+      const res = await fetch(mediaUploadUrl.replace(/\/$/, ""), {
+        method: "POST",
+        body: form,
+      });
+
+      if (!res.ok) {
+        throw new Error(`n8n respondeu ${res.status}`);
+      }
+
+      const json = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        mime_type?: string;
+        file_name?: string;
+      };
+
+      if (!json.url) {
+        throw new Error("n8n não retornou 'url' no JSON de resposta");
+      }
+
+      const publicUrl = json.url;
+      const finalMime = json.mime_type || file.type || null;
+      const finalName = json.file_name || file.name;
       const caption = text.trim();
 
       sendMensagem.mutate(
         {
           contato_id: contatoId,
           telefone: contato.telefone,
-          mensagem: caption || file.name,
+          mensagem: caption || finalName,
           type,
           media_url: publicUrl,
-          mime_type: file.type || null,
-          file_name: file.name,
+          mime_type: finalMime,
+          file_name: finalName,
           whatsapp_account_id: accountOverride === "auto" ? null : accountOverride,
           reply_to_wamid: replyingTo?.whatsapp_message_id || null,
           reply_to_id: replyingTo?.id || null,
