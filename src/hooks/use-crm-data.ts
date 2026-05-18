@@ -212,7 +212,13 @@ export function useSendMensagem() {
       whatsapp_account_id?: string | null;
       reply_to_wamid?: string | null;
       reply_to_id?: string | null;
+      type?: string;
+      media_url?: string | null;
+      mime_type?: string | null;
+      file_name?: string | null;
     }) => {
+      const msgType = msg.type || "text";
+
       // Get chat webhook URL from DB
       const { data: chatUrlData, error: chatUrlError } = await supabase
         .from("system_settings")
