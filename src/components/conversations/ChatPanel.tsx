@@ -33,9 +33,73 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const [text, setText] = useState("");
   const [accountOverride, setAccountOverride] = useState<string | "auto">("auto");
   const [replyingTo, setReplyingTo] = useState<Mensagem | null>(null);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const detectType = (file: File): string => {
+    const m = file.type.toLowerCase();
+    if (m.startsWith("image/")) return m.includes("webp") && file.name.toLowerCase().endsWith(".webp") ? "sticker" : "image";
+    if (m.startsWith("video/")) return "video";
+    if (m.startsWith("audio/")) return "audio";
+    return "document";
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !contato || !contatoId) return;
+
+    // 25MB safety cap (WhatsApp limit for most types is ~16-100MB; keep conservative)
+    if (file.size > 64 * 1024 * 1024) {
+      toast.error("Arquivo muito grande (máx 64 MB)");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+      const safeBase = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 60);
+      const path = `${contatoId}/${Date.now()}-${safeBase}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("whatsapp-media")
+        .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("whatsapp-media").getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
+      const type = detectType(file);
+      const caption = text.trim();
+
+      sendMensagem.mutate(
+        {
+          contato_id: contatoId,
+          telefone: contato.telefone,
+          mensagem: caption || file.name,
+          type,
+          media_url: publicUrl,
+          mime_type: file.type || null,
+          file_name: file.name,
+          whatsapp_account_id: accountOverride === "auto" ? null : accountOverride,
+          reply_to_wamid: replyingTo?.whatsapp_message_id || null,
+          reply_to_id: replyingTo?.id || null,
+        },
+        {
+          onError: (err) => toast.error(err instanceof Error ? err.message : "Erro ao enviar mídia"),
+        }
+      );
+      setText("");
+      setReplyingTo(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha no upload");
+    } finally {
+      setUploading(false);
+    }
+  };
+
 
   // Reset override + reply when contact changes
   useEffect(() => {
