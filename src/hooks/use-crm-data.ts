@@ -29,6 +29,8 @@ export type Mensagem = {
   media_id: string | null;
   mime_type: string | null;
   file_name: string | null;
+  reply_to_wamid: string | null;
+  reply_to_id: string | null;
 };
 
 // ── Realtime helper ──
@@ -208,6 +210,8 @@ export function useSendMensagem() {
       mensagem: string;
       vendedor?: string;
       whatsapp_account_id?: string | null;
+      reply_to_wamid?: string | null;
+      reply_to_id?: string | null;
     }) => {
       // Get chat webhook URL from DB
       const { data: chatUrlData, error: chatUrlError } = await supabase
@@ -260,6 +264,8 @@ export function useSendMensagem() {
         direcao: "saida",
         vendedor: msg.vendedor || null,
         whatsapp_account_id: accountId,
+        reply_to_wamid: msg.reply_to_wamid || null,
+        reply_to_id: msg.reply_to_id || null,
       } as any).select("id").single();
       if (dbError) throw dbError;
 
@@ -269,7 +275,7 @@ export function useSendMensagem() {
         .update({ ultima_interacao: new Date().toISOString() })
         .eq("id", msg.contato_id);
 
-      // 3. Send to n8n webhook (includes our internal message ID + account info)
+      // 3. Send to n8n webhook (includes our internal message ID + account info + reply context)
       const res = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -280,6 +286,10 @@ export function useSendMensagem() {
           phone_number_id: phoneNumberId,
           whatsapp_account_id: accountId,
           account_label: accountLabel,
+          // Reply context for Meta API: context.message_id = wamid being replied to
+          ...(msg.reply_to_wamid
+            ? { context: { message_id: msg.reply_to_wamid }, reply_to_wamid: msg.reply_to_wamid }
+            : {}),
         }),
       });
 
@@ -309,6 +319,8 @@ export function useSendMensagem() {
         media_id: null,
         mime_type: null,
         file_name: null,
+        reply_to_wamid: vars.reply_to_wamid || null,
+        reply_to_id: vars.reply_to_id || null,
       };
 
       qc.setQueryData(["mensagens", vars.contato_id], (old: any) => {

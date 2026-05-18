@@ -366,6 +366,8 @@ export type Database = {
           media_url: string | null
           mensagem: string
           mime_type: string | null
+          reply_to_id: string | null
+          reply_to_wamid: string | null
           status: string
           telefone: string | null
           timestamp: string
@@ -383,6 +385,8 @@ export type Database = {
           media_url?: string | null
           mensagem: string
           mime_type?: string | null
+          reply_to_id?: string | null
+          reply_to_wamid?: string | null
           status?: string
           telefone?: string | null
           timestamp?: string
@@ -400,6 +404,8 @@ export type Database = {
           media_url?: string | null
           mensagem?: string
           mime_type?: string | null
+          reply_to_id?: string | null
+          reply_to_wamid?: string | null
           status?: string
           telefone?: string | null
           timestamp?: string

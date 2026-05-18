@@ -160,8 +160,15 @@ const ChatWebhookSettingsCard = () => {
           <p className="text-xs text-muted-foreground mb-1">Payload enviado para mensagens do chat</p>
           <pre className="text-xs text-foreground whitespace-pre-wrap">
 {`{
-  "telefone": "+5511999999999",
-  "mensagem": "Texto da mensagem"
+  "telefone": "5511999999999",
+  "mensagem": "Texto da mensagem",
+  "mensagem_id": "uuid-interno",
+  "phone_number_id": "...",
+  "whatsapp_account_id": "...",
+  "account_label": "...",
+  // Presente APENAS quando o operador clica em "Responder"
+  "context": { "message_id": "wamid.ORIGINAL" },
+  "reply_to_wamid": "wamid.ORIGINAL"
 }`}
           </pre>
         </div>
