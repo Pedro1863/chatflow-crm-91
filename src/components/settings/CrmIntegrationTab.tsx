@@ -6,6 +6,7 @@ import OrderImportCard from "./OrderImportCard";
 import ContactImportCard from "./ContactImportCard";
 import WebhookSettingsCard from "./WebhookSettingsCard";
 import ChatWebhookSettingsCard from "./ChatWebhookSettingsCard";
+import MediaUploadWebhookCard from "./MediaUploadWebhookCard";
 import TemplateMessagesCard from "./TemplateMessagesCard";
 import WhatsappAccountsCard from "./WhatsappAccountsCard";
 
@@ -28,6 +29,9 @@ const CrmIntegrationTab = () => {
 
       {/* Webhook URL — Mensagens do Chat */}
       <ChatWebhookSettingsCard />
+
+      {/* Webhook URL — Upload de Mídia (n8n grava no VPS) */}
+      <MediaUploadWebhookCard />
 
       {/* Mensagens dos Templates */}
       <TemplateMessagesCard />
