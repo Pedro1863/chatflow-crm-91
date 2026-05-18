@@ -1,11 +1,13 @@
 import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato, type Mensagem } from "@/hooks/use-crm-data";
 import { useWhatsappAccounts } from "@/hooks/use-whatsapp-accounts";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft } from "lucide-react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft, Paperclip } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { MediaMessage } from "./MediaMessage";
+
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
