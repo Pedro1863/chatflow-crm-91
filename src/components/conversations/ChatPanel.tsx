@@ -383,7 +383,29 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
 
       {/* Input */}
       <div className="p-3 border-t border-border bg-card/50 backdrop-blur-sm flex gap-2 items-center">
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          onChange={handleFileSelected}
+          accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="shrink-0 h-9 w-9 rounded-xl"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading || sendMensagem.isPending}
+          title="Anexar arquivo"
+        >
+          {uploading ? (
+            <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+          ) : (
+            <Paperclip className="h-5 w-5 text-muted-foreground" />
+          )}
+        </Button>
         <Popover>
+
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 rounded-xl">
               <Smile className="h-5 w-5 text-muted-foreground" />
