@@ -29,6 +29,8 @@ export type Mensagem = {
   media_id: string | null;
   mime_type: string | null;
   file_name: string | null;
+  reply_to_wamid: string | null;
+  reply_to_id: string | null;
 };
 
 // ── Realtime helper ──
