@@ -1,6 +1,8 @@
 import { useMensagens, useLoadMoreMensagens, useSendMensagem, useContato, type Mensagem } from "@/hooks/use-crm-data";
 import { useWhatsappAccounts } from "@/hooks/use-whatsapp-accounts";
 import { useSystemSetting } from "@/hooks/use-system-settings";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +30,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const loadMore = useLoadMoreMensagens(contatoId);
   const { data: contato } = useContato(contatoId);
   const sendMensagem = useSendMensagem();
+  const qc = useQueryClient();
   const { data: accounts = [] } = useWhatsappAccounts();
   const { data: mediaUploadUrl } = useSystemSetting("n8n_media_upload_webhook_url");
   const activeAccounts = accounts.filter((a) => a.is_active);
@@ -66,19 +69,36 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
     try {
       setUploading(true);
       const type = detectType(file);
+      const caption = text.trim();
 
-      // Envia o arquivo pro n8n via multipart. O n8n grava no VPS e responde com a URL pública.
+      // Resolve conta: override > conta do contato > default
+      let accountId: string | null =
+        accountOverride === "auto" ? null : accountOverride;
+      if (!accountId) {
+        accountId = (contato as any)?.whatsapp_account_id || null;
+      }
+      if (!accountId) {
+        const def = accounts.find((a) => a.is_default && a.is_active);
+        accountId = def?.id || null;
+      }
+      const account = accountId ? accounts.find((a) => a.id === accountId) : null;
+
+      // FLUXO UNIFICADO: n8n recebe o arquivo, salva no VPS e já dispara pra Meta
+      // numa única execução. Retorna { url, mime_type, file_name, wamid }.
       const form = new FormData();
       form.append("file", file, file.name);
       form.append("file_name", file.name);
       form.append("mime_type", file.type || "application/octet-stream");
       form.append("type", type);
+      form.append("caption", caption);
       form.append("telefone", contato.telefone);
       form.append("contato_id", contatoId);
-      form.append(
-        "whatsapp_account_id",
-        accountOverride === "auto" ? "" : accountOverride
-      );
+      form.append("whatsapp_account_id", accountId || "");
+      form.append("phone_number_id", account?.phone_number_id || "");
+      form.append("account_label", account?.label || "");
+      if (replyingTo?.whatsapp_message_id) {
+        form.append("reply_to_wamid", replyingTo.whatsapp_message_id);
+      }
 
       const res = await fetch(mediaUploadUrl.replace(/\/$/, ""), {
         method: "POST",
@@ -93,6 +113,8 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
         url?: string;
         mime_type?: string;
         file_name?: string;
+        wamid?: string;
+        whatsapp_message_id?: string;
       };
 
       if (!json.url) {
@@ -102,25 +124,35 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       const publicUrl = json.url;
       const finalMime = json.mime_type || file.type || null;
       const finalName = json.file_name || file.name;
-      const caption = text.trim();
+      const wamid = json.wamid || json.whatsapp_message_id || null;
 
-      sendMensagem.mutate(
-        {
-          contato_id: contatoId,
-          telefone: contato.telefone,
-          mensagem: caption || finalName,
-          type,
-          media_url: publicUrl,
-          mime_type: finalMime,
-          file_name: finalName,
-          whatsapp_account_id: accountOverride === "auto" ? null : accountOverride,
-          reply_to_wamid: replyingTo?.whatsapp_message_id || null,
-          reply_to_id: replyingTo?.id || null,
-        },
-        {
-          onError: (err) => toast.error(err instanceof Error ? err.message : "Erro ao enviar mídia"),
-        }
-      );
+      // Grava a mensagem no banco (n8n já enviou pra Meta — sem segundo POST)
+      const { error: dbError } = await supabase.from("mensagens").insert({
+        contato_id: contatoId,
+        telefone: contato.telefone,
+        mensagem: caption || finalName,
+        direcao: "saida",
+        whatsapp_account_id: accountId,
+        reply_to_wamid: replyingTo?.whatsapp_message_id || null,
+        reply_to_id: replyingTo?.id || null,
+        type,
+        media_url: publicUrl,
+        mime_type: finalMime,
+        file_name: finalName,
+        whatsapp_message_id: wamid,
+        status: "sent",
+      } as any);
+
+      if (dbError) throw dbError;
+
+      await supabase
+        .from("contatos")
+        .update({ ultima_interacao: new Date().toISOString() })
+        .eq("id", contatoId);
+
+      qc.invalidateQueries({ queryKey: ["mensagens", contatoId] });
+      qc.invalidateQueries({ queryKey: ["contatos"] });
+
       setText("");
       setReplyingTo(null);
     } catch (err) {
