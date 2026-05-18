@@ -333,13 +333,14 @@ export function useSendMensagem() {
         timestamp: new Date().toISOString(),
         status: "sent",
         whatsapp_message_id: null,
-        type: "text",
-        media_url: null,
+        type: vars.type || "text",
+        media_url: vars.media_url || null,
         media_id: null,
-        mime_type: null,
-        file_name: null,
+        mime_type: vars.mime_type || null,
+        file_name: vars.file_name || null,
         reply_to_wamid: vars.reply_to_wamid || null,
         reply_to_id: vars.reply_to_id || null,
+
       };
 
       qc.setQueryData(["mensagens", vars.contato_id], (old: any) => {
