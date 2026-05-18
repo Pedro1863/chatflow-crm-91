@@ -72,6 +72,24 @@ serve(async (req) => {
     const mime_type = body.mime_type || null;
     const file_name = body.file_name || null;
 
+    // Reply context (when client taps "responder" on a message in WhatsApp)
+    // Meta sends: messages[0].context.id with the original wamid
+    const reply_to_wamid =
+      body.reply_to_wamid ||
+      body.context_id ||
+      body?.context?.id ||
+      body?.context?.message_id ||
+      body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.context?.id ||
+      null;
+
+    // Original wamid of the message being sent (so we can match replies later)
+    const whatsapp_message_id =
+      body.whatsapp_message_id ||
+      body.wamid ||
+      body.message_id ||
+      body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.id ||
+      null;
+
     // WhatsApp account identification
     // Accept multiple shapes: top-level, or Meta's nested metadata
     const phoneNumberId =
