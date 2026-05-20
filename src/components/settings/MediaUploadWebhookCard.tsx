@@ -61,8 +61,8 @@ const MediaUploadWebhookCard = () => {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          URL do webhook n8n que recebe arquivos enviados pelo chat (multipart/form-data),
-          grava na pasta do VPS e responde com a URL pública do subdomínio.
+          URL única do webhook n8n para envio de mídia. O n8n recebe o arquivo, salva no VPS,
+          envia para a Meta e registra a mensagem no Supabase via <code>whatsapp-webhook</code>.
         </p>
 
         <div className="flex gap-2">
@@ -92,28 +92,51 @@ const MediaUploadWebhookCard = () => {
 Content-Type: multipart/form-data
 
 Campos do form:
-- file              (binário do arquivo)
-- file_name         (nome original)
-- mime_type         (image/jpeg, video/mp4, application/pdf, ...)
-- type              (image | video | audio | document | sticker)
-- telefone          (E.164, ex: 5551999999999)
-- contato_id        (uuid do contato)
-- whatsapp_account_id (uuid da conta WA, pode ser vazio)`}
+- file                 (binário do arquivo)
+- file_name            (nome original)
+- mime_type            (image/jpeg, video/mp4, application/pdf, ...)
+- type                 (image | video | audio | document | sticker)
+- caption              (texto opcional enviado junto)
+- telefone             (E.164, ex: 5551999999999)
+- contato_id           (uuid do contato)
+- whatsapp_account_id  (uuid da conta WA, pode ser vazio)
+- phone_number_id      (id Meta do número que envia)
+- account_label        (rótulo da conta, ex: POA)`}
             </pre>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground mb-1">Resposta esperada do n8n (JSON)</p>
+            <p className="text-xs text-muted-foreground mb-1">Fluxo no n8n (execução única)</p>
             <pre className="text-xs text-foreground whitespace-pre-wrap">
-{`{
-  "url": "https://midia.seudominio.com/abc123.jpg",
-  "mime_type": "image/jpeg",
-  "file_name": "foto.jpg"
-}`}
+{`1) Salva o arquivo na pasta servida pelo subdomínio
+   → gera URL pública (ex: https://midia.seudominio.com/abc123.jpg)
+
+2) Envia para a Meta (POST /messages com link da mídia)
+   → recebe wamid de retorno
+
+3) POST para o Supabase registrar a mensagem:
+   URL: {SUPABASE_URL}/functions/v1/whatsapp-webhook
+   Body JSON:
+   {
+     "direcao": "saida",
+     "telefone": "5551999999999",
+     "contato_id": "<uuid>",
+     "whatsapp_account_id": "<uuid>",
+     "phone_number_id": "<id Meta>",
+     "type": "image",
+     "media_url": "https://midia.seudominio.com/abc123.jpg",
+     "mime_type": "image/jpeg",
+     "file_name": "foto.jpg",
+     "mensagem": "<caption ou vazio>",
+     "whatsapp_message_id": "wamid.XYZ"
+   }
+
+Resposta para o dashboard: 200 OK (sem corpo obrigatório).`}
             </pre>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            O n8n deve: 1) salvar o arquivo na pasta servida pelo subdomínio, 2) responder com a URL pública.
-            Essa URL será gravada em <code>mensagens.media_url</code> e usada também pra mandar à Meta no envio.
+            O front <strong>não</strong> grava mídia em <code>mensagens</code> — quem grava é o
+            <code> whatsapp-webhook</code> ao receber o POST do n8n (igual ao fluxo de entrada).
+            A bolha otimista no chat é substituída em tempo real quando o registro chega via Realtime.
           </p>
         </div>
       </CardContent>
