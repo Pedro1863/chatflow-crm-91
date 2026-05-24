@@ -42,6 +42,25 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const forcedTypeRef = useRef<string | null>(null);
+  const forcedAcceptRef = useRef<string>("*/*");
+
+  const MEDIA_TYPES: { type: string; label: string; accept: string; icon: any }[] = [
+    { type: "image", label: "Imagem", accept: "image/*", icon: ImageIcon },
+    { type: "video", label: "Vídeo", accept: "video/*", icon: Video },
+    { type: "audio", label: "Áudio", accept: "audio/*", icon: Music },
+    { type: "document", label: "Documento", accept: ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar", icon: FileText },
+    { type: "sticker", label: "Sticker", accept: "image/webp", icon: Sticker },
+  ];
+
+  const openPickerFor = (type: string, accept: string) => {
+    forcedTypeRef.current = type;
+    forcedAcceptRef.current = accept;
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = accept;
+      fileInputRef.current.click();
+    }
+  };
 
   const detectType = (file: File): string => {
     const m = file.type.toLowerCase();
@@ -54,6 +73,8 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
+    const forcedType = forcedTypeRef.current;
+    forcedTypeRef.current = null;
     if (!file || !contato || !contatoId) return;
 
     if (!mediaUploadUrl) {
@@ -68,7 +89,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
 
     try {
       setUploading(true);
-      const type = detectType(file);
+      const type = forcedType || detectType(file);
       const caption = text.trim();
 
       // Resolve conta: override > conta do contato > default
