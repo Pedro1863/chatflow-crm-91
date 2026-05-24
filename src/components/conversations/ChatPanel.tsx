@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft, Paperclip } from "lucide-react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft, Paperclip, Image as ImageIcon, Video, Music, FileText, Sticker } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { MediaMessage } from "./MediaMessage";
 
@@ -42,6 +42,25 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const forcedTypeRef = useRef<string | null>(null);
+  const forcedAcceptRef = useRef<string>("*/*");
+
+  const MEDIA_TYPES: { type: string; label: string; accept: string; icon: any }[] = [
+    { type: "image", label: "Imagem", accept: "image/*", icon: ImageIcon },
+    { type: "video", label: "Vídeo", accept: "video/*", icon: Video },
+    { type: "audio", label: "Áudio", accept: "audio/*", icon: Music },
+    { type: "document", label: "Documento", accept: ".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar", icon: FileText },
+    { type: "sticker", label: "Sticker", accept: "image/webp", icon: Sticker },
+  ];
+
+  const openPickerFor = (type: string, accept: string) => {
+    forcedTypeRef.current = type;
+    forcedAcceptRef.current = accept;
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = accept;
+      fileInputRef.current.click();
+    }
+  };
 
   const detectType = (file: File): string => {
     const m = file.type.toLowerCase();
@@ -54,6 +73,8 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
+    const forcedType = forcedTypeRef.current;
+    forcedTypeRef.current = null;
     if (!file || !contato || !contatoId) return;
 
     if (!mediaUploadUrl) {
@@ -68,7 +89,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
 
     try {
       setUploading(true);
-      const type = detectType(file);
+      const type = forcedType || detectType(file);
       const caption = text.trim();
 
       // Resolve conta: override > conta do contato > default
@@ -414,20 +435,37 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
           onChange={handleFileSelected}
           accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar"
         />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 h-9 w-9 rounded-xl"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={uploading || sendMensagem.isPending}
-          title="Anexar arquivo"
-        >
-          {uploading ? (
-            <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
-          ) : (
-            <Paperclip className="h-5 w-5 text-muted-foreground" />
-          )}
-        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-9 w-9 rounded-xl"
+              disabled={uploading || sendMensagem.isPending}
+              title="Anexar mídia"
+            >
+              {uploading ? (
+                <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />
+              ) : (
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent side="top" align="start" className="w-48 p-1">
+            {MEDIA_TYPES.map(({ type, label, accept, icon: Icon }) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => openPickerFor(type, accept)}
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-accent text-left"
+              >
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                {label}
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+
         <Popover>
 
           <PopoverTrigger asChild>
