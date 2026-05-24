@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft, Paperclip } from "lucide-react";
+import { Send, MessageSquare, MoreVertical, Check, CheckCheck, Smile, ChevronUp, Loader2, Phone, Reply, X, CornerUpLeft, Paperclip, Image as ImageIcon, Video, Music, FileText, Sticker } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { MediaMessage } from "./MediaMessage";
 
