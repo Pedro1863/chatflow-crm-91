@@ -119,9 +119,11 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       form.append("whatsapp_account_id", accountId || "");
       form.append("phone_number_id", account?.phone_number_id || "");
       form.append("account_label", account?.label || "");
-      if (replyingTo?.whatsapp_message_id) {
-        form.append("reply_to_wamid", replyingTo.whatsapp_message_id);
-      }
+      // Reply context — sempre enviado (vazio quando não é resposta) para
+      // facilitar o mapeamento dos campos no n8n.
+      form.append("reply_to_wamid", replyingTo?.whatsapp_message_id || "");
+      form.append("reply_to_id", replyingTo?.id || "");
+      form.append("is_reply", replyingTo?.whatsapp_message_id ? "true" : "false");
 
       // O n8n pode levar vários segundos (upload + Meta + webhook). Não exigimos JSON
       // de resposta — basta um 2xx. A mensagem aparece via Realtime quando o
