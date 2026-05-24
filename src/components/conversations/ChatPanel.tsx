@@ -124,6 +124,15 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       form.append("reply_to_wamid", replyingTo?.whatsapp_message_id || "");
       form.append("reply_to_id", replyingTo?.id || "");
       form.append("is_reply", replyingTo?.whatsapp_message_id ? "true" : "false");
+      // Context para Meta API — campo plano (form-data não suporta nested) +
+      // string JSON pronta pra reaproveitar caso o n8n prefira.
+      form.append("context_message_id", replyingTo?.whatsapp_message_id || "");
+      form.append(
+        "context",
+        replyingTo?.whatsapp_message_id
+          ? JSON.stringify({ message_id: replyingTo.whatsapp_message_id })
+          : ""
+      );
 
       // O n8n pode levar vários segundos (upload + Meta + webhook). Não exigimos JSON
       // de resposta — basta um 2xx. A mensagem aparece via Realtime quando o
