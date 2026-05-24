@@ -119,20 +119,15 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       form.append("whatsapp_account_id", accountId || "");
       form.append("phone_number_id", account?.phone_number_id || "");
       form.append("account_label", account?.label || "");
-      // Reply context — sempre enviado (vazio quando não é resposta) para
-      // facilitar o mapeamento dos campos no n8n.
-      form.append("reply_to_wamid", replyingTo?.whatsapp_message_id || "");
-      form.append("reply_to_id", replyingTo?.id || "");
-      form.append("is_reply", replyingTo?.whatsapp_message_id ? "true" : "false");
-      // Context para Meta API — campo plano (form-data não suporta nested) +
-      // string JSON pronta pra reaproveitar caso o n8n prefira.
-      form.append("context_message_id", replyingTo?.whatsapp_message_id || "");
-      form.append(
-        "context",
-        replyingTo?.whatsapp_message_id
-          ? JSON.stringify({ message_id: replyingTo.whatsapp_message_id })
-          : ""
-      );
+      // Reply context — anexado APENAS quando for realmente uma resposta
+      if (replyingTo?.whatsapp_message_id || replyingTo?.id) {
+        form.append("reply_to_wamid", replyingTo?.whatsapp_message_id || "");
+        form.append("reply_to_id", replyingTo?.id || "");
+        form.append("is_reply", "true");
+        const ctxId = replyingTo?.whatsapp_message_id || replyingTo?.id || "";
+        form.append("context_message_id", ctxId);
+        form.append("context", JSON.stringify({ message_id: ctxId }));
+      }
 
       // O n8n pode levar vários segundos (upload + Meta + webhook). Não exigimos JSON
       // de resposta — basta um 2xx. A mensagem aparece via Realtime quando o

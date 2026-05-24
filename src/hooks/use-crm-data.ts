@@ -306,16 +306,15 @@ export function useSendMensagem() {
           whatsapp_account_id: accountId,
           account_label: accountLabel,
           type: msgType,
-          // Reply context — sempre presente (null quando não é resposta) para
-          // facilitar o mapeamento dos campos no n8n. `context` é populado
-          // sempre que houver QUALQUER referência (wamid OU id interno).
-          reply_to_wamid: msg.reply_to_wamid || null,
-          reply_to_id: msg.reply_to_id || null,
-          is_reply: !!(msg.reply_to_wamid || msg.reply_to_id),
-          context:
-            msg.reply_to_wamid || msg.reply_to_id
-              ? { message_id: msg.reply_to_wamid || msg.reply_to_id }
-              : null,
+          // Reply context — incluído APENAS quando for realmente uma resposta
+          ...(msg.reply_to_wamid || msg.reply_to_id
+            ? {
+                reply_to_wamid: msg.reply_to_wamid || null,
+                reply_to_id: msg.reply_to_id || null,
+                is_reply: true,
+                context: { message_id: msg.reply_to_wamid || msg.reply_to_id },
+              }
+            : {}),
           ...(msg.media_url
             ? {
                 media_url: msg.media_url,
