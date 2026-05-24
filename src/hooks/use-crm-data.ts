@@ -306,6 +306,12 @@ export function useSendMensagem() {
           whatsapp_account_id: accountId,
           account_label: accountLabel,
           type: msgType,
+          // Reply context — sempre presente (null quando não é resposta) para
+          // facilitar o mapeamento dos campos no n8n.
+          reply_to_wamid: msg.reply_to_wamid || null,
+          reply_to_id: msg.reply_to_id || null,
+          is_reply: !!msg.reply_to_wamid,
+          context: msg.reply_to_wamid ? { message_id: msg.reply_to_wamid } : null,
           ...(msg.media_url
             ? {
                 media_url: msg.media_url,
@@ -313,9 +319,6 @@ export function useSendMensagem() {
                 file_name: msg.file_name,
                 caption: msg.mensagem || null,
               }
-            : {}),
-          ...(msg.reply_to_wamid
-            ? { context: { message_id: msg.reply_to_wamid }, reply_to_wamid: msg.reply_to_wamid }
             : {}),
         }),
       });
