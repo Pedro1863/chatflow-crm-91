@@ -83,8 +83,10 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       }
       const account = accountId ? accounts.find((a) => a.id === accountId) : null;
 
-      // FLUXO UNIFICADO: n8n recebe o arquivo, salva no VPS e já dispara pra Meta
-      // numa única execução. Retorna { url, mime_type, file_name, wamid }.
+      // FLUXO UNIFICADO (Opção A): n8n recebe o arquivo, salva no VPS, envia pra Meta
+      // e DEPOIS faz POST no whatsapp-webhook (direcao: "saida") pra gravar em `mensagens`.
+      // O front NÃO grava nada — apenas dispara o webhook e confia no Realtime para
+      // exibir a bolha quando o registro chegar no Supabase.
       const form = new FormData();
       form.append("file", file, file.name);
       form.append("file_name", file.name);
@@ -100,6 +102,9 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
         form.append("reply_to_wamid", replyingTo.whatsapp_message_id);
       }
 
+      // O n8n pode levar vários segundos (upload + Meta + webhook). Não exigimos JSON
+      // de resposta — basta um 2xx. A mensagem aparece via Realtime quando o
+      // whatsapp-webhook gravar em `mensagens`.
       const res = await fetch(mediaUploadUrl.replace(/\/$/, ""), {
         method: "POST",
         body: form,
@@ -109,50 +114,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
         throw new Error(`n8n respondeu ${res.status}`);
       }
 
-      const json = (await res.json().catch(() => ({}))) as {
-        url?: string;
-        mime_type?: string;
-        file_name?: string;
-        wamid?: string;
-        whatsapp_message_id?: string;
-      };
-
-      if (!json.url) {
-        throw new Error("n8n não retornou 'url' no JSON de resposta");
-      }
-
-      const publicUrl = json.url;
-      const finalMime = json.mime_type || file.type || null;
-      const finalName = json.file_name || file.name;
-      const wamid = json.wamid || json.whatsapp_message_id || null;
-
-      // Grava a mensagem no banco (n8n já enviou pra Meta — sem segundo POST)
-      const { error: dbError } = await supabase.from("mensagens").insert({
-        contato_id: contatoId,
-        telefone: contato.telefone,
-        mensagem: caption || finalName,
-        direcao: "saida",
-        whatsapp_account_id: accountId,
-        reply_to_wamid: replyingTo?.whatsapp_message_id || null,
-        reply_to_id: replyingTo?.id || null,
-        type,
-        media_url: publicUrl,
-        mime_type: finalMime,
-        file_name: finalName,
-        whatsapp_message_id: wamid,
-        status: "sent",
-      } as any);
-
-      if (dbError) throw dbError;
-
-      await supabase
-        .from("contatos")
-        .update({ ultima_interacao: new Date().toISOString() })
-        .eq("id", contatoId);
-
-      qc.invalidateQueries({ queryKey: ["mensagens", contatoId] });
-      qc.invalidateQueries({ queryKey: ["contatos"] });
-
+      toast.success("Mídia enviada — aguardando confirmação...");
       setText("");
       setReplyingTo(null);
     } catch (err) {
