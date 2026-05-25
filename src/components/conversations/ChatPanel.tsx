@@ -116,6 +116,7 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
       form.append("caption", caption);
       form.append("telefone", contato.telefone);
       form.append("contato_id", contatoId);
+      form.append("direcao", "saida");
       form.append("whatsapp_account_id", accountId || "");
       form.append("phone_number_id", account?.phone_number_id || "");
       form.append("account_label", account?.label || "");
