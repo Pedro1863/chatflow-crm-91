@@ -262,25 +262,31 @@ export function useSendMensagem() {
         accountLabel = acc?.label || null;
       }
 
-      // 1. Save outgoing message to Supabase (texto E mídia) com direcao=saida
-      //    para a mensagem aparecer imediatamente no lado correto da conversa.
-      //    n8n deve evitar reinserir mensagens de saída (ou usar mensagem_id para dedupe).
-      const { data: inserted, error: dbError } = await supabase.from("mensagens").insert({
-        contato_id: msg.contato_id,
-        telefone: msg.telefone,
-        mensagem: msg.mensagem,
-        direcao: "saida",
-        vendedor: msg.vendedor || null,
-        whatsapp_account_id: accountId,
-        reply_to_wamid: msg.reply_to_wamid || null,
-        reply_to_id: msg.reply_to_id || null,
-        type: msgType,
-        media_url: msg.media_url || null,
-        mime_type: msg.mime_type || null,
-        file_name: msg.file_name || null,
-      } as any).select("id").single();
-      if (dbError) throw dbError;
-      const insertedId: string | null = inserted.id;
+      const isMedia = !!msg.media_url;
+
+      // 1. Save outgoing message to Supabase
+      //    MEDIA: skip — n8n will POST to whatsapp-webhook (direcao=saida) after
+      //    uploading to VPS + sending to Meta. Realtime brings the real row.
+      //    TEXT: persist immediately so the message survives even if n8n fails.
+      let insertedId: string | null = null;
+      if (!isMedia) {
+        const { data: inserted, error: dbError } = await supabase.from("mensagens").insert({
+          contato_id: msg.contato_id,
+          telefone: msg.telefone,
+          mensagem: msg.mensagem,
+          direcao: "saida",
+          vendedor: msg.vendedor || null,
+          whatsapp_account_id: accountId,
+          reply_to_wamid: msg.reply_to_wamid || null,
+          reply_to_id: msg.reply_to_id || null,
+          type: msgType,
+          media_url: null,
+          mime_type: null,
+          file_name: null,
+        } as any).select("id").single();
+        if (dbError) throw dbError;
+        insertedId = inserted.id;
+      }
 
       // 2. Update ultima_interacao
       await supabase
