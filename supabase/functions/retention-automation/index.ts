@@ -318,19 +318,14 @@ serve(async (req) => {
         console.error("Erro ao criar mensagem no chat:", chatErr);
       }
 
-      // Mark as sent in zone tracking
-      await supabase
-        .from("customer_zone_tracking")
-        .update({
-          template_sent: true,
-          template_sent_at: now.toISOString(),
-          updated_at: now.toISOString(),
-        })
-        .eq("customer_id", pending.customer_id);
+      // Note: template_sent and template_sends were already recorded BEFORE
+      // calling n8n (see top of this loop iteration) to prevent backlog
+      // accumulation in case of timeouts.
 
       sentCount++;
       results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "sent" });
     }
+
 
     return new Response(
       JSON.stringify({
