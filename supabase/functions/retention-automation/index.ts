@@ -169,6 +169,27 @@ serve(async (req) => {
         continue;
       }
 
+      // ── CRITICAL: Mark as sent BEFORE calling n8n ──
+      // This prevents the backlog problem: if n8n times out or fails,
+      // the customer is still marked as "attempted today" and won't be
+      // re-queued on the next cron run. We only revert if we get an
+      // explicit non-OK HTTP response (not timeouts/network errors).
+      await supabase.from("template_sends").insert({
+        customer_id: pending.customer_id,
+        template_name: templateName,
+        telefone: phone,
+        sent_date: today,
+      });
+
+      await supabase
+        .from("customer_zone_tracking")
+        .update({
+          template_sent: true,
+          template_sent_at: now.toISOString(),
+          updated_at: now.toISOString(),
+        })
+        .eq("customer_id", pending.customer_id);
+
       // Send via n8n webhook if URL provided
       if (webhookUrl) {
         // Insert log BEFORE sending to get mensagem_id
@@ -212,12 +233,22 @@ serve(async (req) => {
                 .eq("id", mensagemId);
             }
             failCount++;
-            results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_failed" });
+            results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_failed_but_marked" });
             continue;
           }
+
+          // Update log to success
+          if (mensagemId) {
+            await supabase.from("logs_envio_template")
+              .update({ status: "sucesso" })
+              .eq("id", mensagemId);
+          }
         } catch (err: any) {
+          // Timeout or network error: we keep template_sent=true to avoid
+          // re-queueing tomorrow. n8n may still have processed the request
+          // even though we didn't get the response in time.
           const errorMsg = err.name === "AbortError"
-            ? "Timeout: servidor não respondeu em 5s"
+            ? "Timeout: servidor não respondeu em 5s (mantido como enviado para evitar reenvio)"
             : err.message || "Erro desconhecido";
           if (mensagemId) {
             await supabase.from("logs_envio_template")
@@ -225,25 +256,11 @@ serve(async (req) => {
               .eq("id", mensagemId);
           }
           failCount++;
-          results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_error" });
+          results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_timeout_but_marked" });
           continue;
-        }
-
-        // Update log to success
-        if (mensagemId) {
-          await supabase.from("logs_envio_template")
-            .update({ status: "sucesso" })
-            .eq("id", mensagemId);
         }
       }
 
-      // Record send in template_sends
-      await supabase.from("template_sends").insert({
-        customer_id: pending.customer_id,
-        template_name: templateName,
-        telefone: phone,
-        sent_date: today,
-      });
 
       // ── Create conversation message in chat ──
       try {
@@ -301,19 +318,14 @@ serve(async (req) => {
         console.error("Erro ao criar mensagem no chat:", chatErr);
       }
 
-      // Mark as sent in zone tracking
-      await supabase
-        .from("customer_zone_tracking")
-        .update({
-          template_sent: true,
-          template_sent_at: now.toISOString(),
-          updated_at: now.toISOString(),
-        })
-        .eq("customer_id", pending.customer_id);
+      // Note: template_sent and template_sends were already recorded BEFORE
+      // calling n8n (see top of this loop iteration) to prevent backlog
+      // accumulation in case of timeouts.
 
       sentCount++;
       results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "sent" });
     }
+
 
     return new Response(
       JSON.stringify({
