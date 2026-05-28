@@ -27,16 +27,18 @@ serve(async (req) => {
     if (mensagemId && whatsappMessageId && !status) {
       if (source === "template") {
         // Link in logs_envio_template
+        // Link in logs_envio_template and fetch customer_id + template_name
         const { data, error } = await supabase
           .from("logs_envio_template")
           .update({ whatsapp_message_id: whatsappMessageId })
           .eq("id", mensagemId)
-          .select("id, telefone");
+          .select("id, telefone, customer_id, template_name");
         if (error) throw error;
 
-        // Also link in the corresponding mensagens row (chat) by matching telefone + most recent template message
+        // Also link in the corresponding mensagens row (chat)
         if (data && data.length > 0) {
-          const telefone = data[0].telefone;
+          const row = data[0];
+          const telefone = row.telefone;
           if (telefone) {
             const { data: msgRows } = await supabase
               .from("mensagens")
@@ -55,6 +57,45 @@ serve(async (req) => {
                 .eq("id", msgRows[0].id);
             }
           }
+
+          // ── Confirmed send: mark template_sent + insert template_sends ──
+          if (row.customer_id && row.template_name) {
+            const nowIso = new Date().toISOString();
+            const today = nowIso.slice(0, 10);
+
+            // Dedup: only insert if not already recorded today
+            const { data: existingSend } = await supabase
+              .from("template_sends")
+              .select("id")
+              .eq("customer_id", row.customer_id)
+              .eq("template_name", row.template_name)
+              .eq("sent_date", today)
+              .limit(1);
+
+            if (!existingSend || existingSend.length === 0) {
+              await supabase.from("template_sends").insert({
+                customer_id: row.customer_id,
+                template_name: row.template_name,
+                telefone: telefone,
+                sent_date: today,
+              });
+            }
+
+            await supabase
+              .from("customer_zone_tracking")
+              .update({
+                template_sent: true,
+                template_sent_at: nowIso,
+                updated_at: nowIso,
+              })
+              .eq("customer_id", row.customer_id);
+          }
+
+          // Mark log as success now that n8n confirmed
+          await supabase
+            .from("logs_envio_template")
+            .update({ status: "sucesso" })
+            .eq("id", row.id);
         }
 
         return new Response(

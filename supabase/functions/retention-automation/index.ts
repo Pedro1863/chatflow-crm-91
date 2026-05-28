@@ -169,26 +169,9 @@ serve(async (req) => {
         continue;
       }
 
-      // ── CRITICAL: Mark as sent BEFORE calling n8n ──
-      // This prevents the backlog problem: if n8n times out or fails,
-      // the customer is still marked as "attempted today" and won't be
-      // re-queued on the next cron run. We only revert if we get an
-      // explicit non-OK HTTP response (not timeouts/network errors).
-      await supabase.from("template_sends").insert({
-        customer_id: pending.customer_id,
-        template_name: templateName,
-        telefone: phone,
-        sent_date: today,
-      });
-
-      await supabase
-        .from("customer_zone_tracking")
-        .update({
-          template_sent: true,
-          template_sent_at: now.toISOString(),
-          updated_at: now.toISOString(),
-        })
-        .eq("customer_id", pending.customer_id);
+      // NOTE: template_sent + template_sends are NO LONGER marked here.
+      // They will only be set by the whatsapp-status webhook AFTER n8n
+      // confirms the send by returning {mensagem_id, whatsapp_message_id, source:"template"}.
 
       // Send via n8n webhook if URL provided
       if (webhookUrl) {
