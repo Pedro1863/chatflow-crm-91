@@ -140,9 +140,13 @@ serve(async (req) => {
       }
     }
 
-    // 6. Send templates
+    // 6. Send templates (max 3 attempts per contact, 15s interval between sends)
     let sentCount = 0;
     let failCount = 0;
+    const MAX_ATTEMPTS = 3;
+    const INTERVAL_MS = 15000;
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    let isFirstSend = true;
 
     for (const pending of pendingSends) {
       const phone = normalizeBrazilPhoneE164(pending.telefone);
@@ -175,74 +179,90 @@ serve(async (req) => {
 
       // Send via n8n webhook if URL provided
       if (webhookUrl) {
-        // Insert log BEFORE sending to get mensagem_id
-        const { data: logRow } = await supabase
-          .from("logs_envio_template")
-          .insert({
-            customer_id: pending.customer_id,
-            telefone: phone,
-            template_name: templateName,
-            status: "pendente",
-          })
-          .select("id")
-          .single();
+        let success = false;
+        let lastError = "";
 
-        const mensagemId = logRow?.id || null;
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+          // Wait 15s between sends (not before the very first one)
+          if (!isFirstSend) {
+            await sleep(INTERVAL_MS);
+          }
+          isFirstSend = false;
 
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 5000);
-          const sendUrl = webhookUrl.replace(/\/$/, "");
-          const res = await fetch(sendUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          // Insert log BEFORE sending to get mensagem_id
+          const { data: logRow } = await supabase
+            .from("logs_envio_template")
+            .insert({
+              customer_id: pending.customer_id,
               telefone: phone,
-              nome: pending.nome,
-              template: templateName,
-              variaveis: [pending.nome],
-              mensagem_id: mensagemId,
-            }),
-            signal: controller.signal,
-          });
-          clearTimeout(timer);
+              template_name: templateName,
+              status: "pendente",
+              erro: attempt > 1 ? `Tentativa ${attempt}/${MAX_ATTEMPTS}` : null,
+            })
+            .select("id")
+            .single();
 
-          if (!res.ok) {
-            const errText = await res.text().catch(() => `HTTP ${res.status}`);
-            const errorMsg = `HTTP ${res.status}: ${errText.slice(0, 200)}`;
+          const mensagemId = logRow?.id || null;
+
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            const sendUrl = webhookUrl.replace(/\/$/, "");
+            const res = await fetch(sendUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                telefone: phone,
+                nome: pending.nome,
+                template: templateName,
+                variaveis: [pending.nome],
+                mensagem_id: mensagemId,
+                tentativa: attempt,
+              }),
+              signal: controller.signal,
+            });
+            clearTimeout(timer);
+
+            if (!res.ok) {
+              const errText = await res.text().catch(() => `HTTP ${res.status}`);
+              lastError = `HTTP ${res.status}: ${errText.slice(0, 200)} (tentativa ${attempt}/${MAX_ATTEMPTS})`;
+              if (mensagemId) {
+                await supabase.from("logs_envio_template")
+                  .update({ status: "erro", erro: lastError })
+                  .eq("id", mensagemId);
+              }
+              continue; // retry
+            }
+
+            // Success: update log and break retry loop
             if (mensagemId) {
               await supabase.from("logs_envio_template")
-                .update({ status: "erro", erro: errorMsg })
+                .update({ status: "sucesso" })
                 .eq("id", mensagemId);
             }
-            failCount++;
-            results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_failed_but_marked" });
-            continue;
+            success = true;
+            break;
+          } catch (err: any) {
+            lastError = err.name === "AbortError"
+              ? `Timeout: servidor não respondeu em 5s (tentativa ${attempt}/${MAX_ATTEMPTS})`
+              : `${err.message || "Erro desconhecido"} (tentativa ${attempt}/${MAX_ATTEMPTS})`;
+            if (mensagemId) {
+              await supabase.from("logs_envio_template")
+                .update({ status: "erro", erro: lastError })
+                .eq("id", mensagemId);
+            }
+            continue; // retry
           }
+        }
 
-          // Update log to success
-          if (mensagemId) {
-            await supabase.from("logs_envio_template")
-              .update({ status: "sucesso" })
-              .eq("id", mensagemId);
-          }
-        } catch (err: any) {
-          // Timeout or network error: we keep template_sent=true to avoid
-          // re-queueing tomorrow. n8n may still have processed the request
-          // even though we didn't get the response in time.
-          const errorMsg = err.name === "AbortError"
-            ? "Timeout: servidor não respondeu em 5s (mantido como enviado para evitar reenvio)"
-            : err.message || "Erro desconhecido";
-          if (mensagemId) {
-            await supabase.from("logs_envio_template")
-              .update({ status: "erro", erro: errorMsg })
-              .eq("id", mensagemId);
-          }
+        if (!success) {
           failCount++;
-          results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "send_timeout_but_marked" });
+          results.push({ customer_id: pending.customer_id, zone: pending.zone, action: `failed_after_${MAX_ATTEMPTS}_attempts` });
           continue;
         }
       }
+
+
 
 
       // ── Create conversation message in chat ──
