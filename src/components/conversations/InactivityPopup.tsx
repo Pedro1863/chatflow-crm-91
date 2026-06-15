@@ -75,13 +75,34 @@ function useLeadsPipeline() {
 }
 
 
+/** Fetch customers last order date keyed by phone */
+function useCustomersLastOrder() {
+  return useQuery({
+    queryKey: ["customers_last_order_all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("telefone, data_ultimo_pedido");
+      if (error) throw error;
+      const map = new Map<string, string>();
+      for (const row of data ?? []) {
+        if (row.telefone && row.data_ultimo_pedido) {
+          map.set(row.telefone, row.data_ultimo_pedido);
+        }
+      }
+      return map;
+    },
+    staleTime: 30_000,
+  });
+}
 
 
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
   const { data: lastMessages } = useLastIncomingMessages();
   const { data: pipelineEntries } = useLeadsPipeline();
-  
+  const { data: customersLastOrder } = useCustomersLastOrder();
+
   const registerAttempt = useRegisterLeadAttempt();
   const markPopupShown = useMarkPopupShown();
   const qc = useQueryClient();
