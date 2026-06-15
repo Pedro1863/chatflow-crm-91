@@ -160,13 +160,12 @@ export function InactivityPopup() {
       // Usa popup_ciclo_data do leads_pipeline (atualizado pelo RPC ao virar cliente).
       let clienteReengajou = false;
       if (contato.status_funil === "cliente") {
-        const st = phoneState.get(contato.telefone);
-        const cicloTs = st?.dataInteracao || null; // timestamp real da venda/última interação
-        if (!cicloTs) continue; // sem ciclo registrado → bloqueia por segurança
+        const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
+        if (!lastOrderTs) continue; // sem venda registrada → bloqueia por segurança
         const lastMsgMs = new Date(lastMsgTime).getTime();
-        const cicloMs = new Date(cicloTs).getTime();
-        if (lastMsgMs <= cicloMs) continue; // mensagem é anterior à venda → bloqueado
-        clienteReengajou = true; // mandou msg após a venda → reengajou
+        const lastOrderMs = new Date(lastOrderTs).getTime();
+        if (lastMsgMs <= lastOrderMs) continue; // mensagem é anterior à última venda → bloqueado
+        clienteReengajou = true; // mandou msg após a última venda → reengajou
       }
 
       const elapsed = now - new Date(lastMsgTime).getTime();
