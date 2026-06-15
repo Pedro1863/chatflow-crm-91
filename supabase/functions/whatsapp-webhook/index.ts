@@ -145,10 +145,27 @@ serve(async (req) => {
       contato = novo;
     }
 
+    const interactionAt = new Date().toISOString();
+    let shouldResetCustomerStatus = false;
+
+    if (direcao === "entrada" && contato.status_funil === "cliente") {
+      const { data: customer } = await supabase
+        .from("customers")
+        .select("data_ultimo_pedido")
+        .eq("telefone", telefone)
+        .order("data_ultimo_pedido", { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+      const lastOrderAt = customer?.data_ultimo_pedido ? new Date(customer.data_ultimo_pedido).getTime() : null;
+      shouldResetCustomerStatus = !!lastOrderAt && new Date(interactionAt).getTime() > lastOrderAt;
+    }
+
     await supabase
       .from("contatos")
       .update({
-        ultima_interacao: new Date().toISOString(),
+        ultima_interacao: interactionAt,
+        ...(shouldResetCustomerStatus ? { status_funil: "novo_lead" } : {}),
         ...(whatsappAccountId ? { whatsapp_account_id: whatsappAccountId } : {}),
       })
       .eq("id", contato.id);
