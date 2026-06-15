@@ -152,7 +152,7 @@ export function InactivityPopup() {
 
       const state = phoneState.get(contato.telefone);
 
-      if (state) {
+      if (state && !clienteReengajou) {
         const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > new Date(lastMsgTime).getTime();
 
         if (pipelineAfterMsg) {
