@@ -17,7 +17,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const body = await req.json();
+    const raw = await req.json();
+    // Defensive: n8n sometimes wraps the JSON inside a "body" key
+    const body = (raw && typeof raw === "object" && raw.body && typeof raw.body === "object" && !Array.isArray(raw.body))
+      ? raw.body
+      : raw;
     const mensagemId = body.mensagem_id;
     const whatsappMessageId = body.whatsapp_message_id || body.wamid;
     const status = body.status;
