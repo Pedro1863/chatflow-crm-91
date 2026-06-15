@@ -75,13 +75,34 @@ function useLeadsPipeline() {
 }
 
 
+/** Fetch customers last order date keyed by phone */
+function useCustomersLastOrder() {
+  return useQuery({
+    queryKey: ["customers_last_order_all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("telefone, data_ultimo_pedido");
+      if (error) throw error;
+      const map = new Map<string, string>();
+      for (const row of data ?? []) {
+        if (row.telefone && row.data_ultimo_pedido) {
+          map.set(row.telefone, row.data_ultimo_pedido);
+        }
+      }
+      return map;
+    },
+    staleTime: 30_000,
+  });
+}
 
 
 export function InactivityPopup() {
   const { data: contatos = [] } = useContatos();
   const { data: lastMessages } = useLastIncomingMessages();
   const { data: pipelineEntries } = useLeadsPipeline();
-  
+  const { data: customersLastOrder } = useCustomersLastOrder();
+
   const registerAttempt = useRegisterLeadAttempt();
   const markPopupShown = useMarkPopupShown();
   const qc = useQueryClient();
@@ -139,13 +160,12 @@ export function InactivityPopup() {
       // Usa popup_ciclo_data do leads_pipeline (atualizado pelo RPC ao virar cliente).
       let clienteReengajou = false;
       if (contato.status_funil === "cliente") {
-        const st = phoneState.get(contato.telefone);
-        const cicloTs = st?.dataInteracao || null; // timestamp real da venda/última interação
-        if (!cicloTs) continue; // sem ciclo registrado → bloqueia por segurança
+        const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
+        if (!lastOrderTs) continue; // sem venda registrada → bloqueia por segurança
         const lastMsgMs = new Date(lastMsgTime).getTime();
-        const cicloMs = new Date(cicloTs).getTime();
-        if (lastMsgMs <= cicloMs) continue; // mensagem é anterior à venda → bloqueado
-        clienteReengajou = true; // mandou msg após a venda → reengajou
+        const lastOrderMs = new Date(lastOrderTs).getTime();
+        if (lastMsgMs <= lastOrderMs) continue; // mensagem é anterior à última venda → bloqueado
+        clienteReengajou = true; // mandou msg após a última venda → reengajou
       }
 
       const elapsed = now - new Date(lastMsgTime).getTime();
@@ -181,7 +201,7 @@ export function InactivityPopup() {
     }
 
     return eligible;
-  }, [contatos, lastMessages, pipelineEntries, processedPhones]);
+  }, [contatos, lastMessages, pipelineEntries, customersLastOrder, processedPhones]);
 
   useEffect(() => {
     setCurrentIndex(0);
