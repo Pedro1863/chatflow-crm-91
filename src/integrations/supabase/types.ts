@@ -475,27 +475,6 @@ export type Database = {
           },
         ]
       }
-      n8n_processed_messages: {
-        Row: {
-          mensagem_id: string
-          processed_at: string
-          telefone: string | null
-          template_name: string | null
-        }
-        Insert: {
-          mensagem_id: string
-          processed_at?: string
-          telefone?: string | null
-          template_name?: string | null
-        }
-        Update: {
-          mensagem_id?: string
-          processed_at?: string
-          telefone?: string | null
-          template_name?: string | null
-        }
-        Relationships: []
-      }
       orders: {
         Row: {
           bling_id_pedido: string | null
