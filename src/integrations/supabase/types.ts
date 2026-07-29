@@ -625,6 +625,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_accounts: {
         Row: {
           business_id: string | null
@@ -687,6 +708,14 @@ export type Database = {
           total_clientes_churnados_no_mes: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_crm_staff: { Args: { _user_id: string }; Returns: boolean }
       metricas_aquisicao_mensal: {
         Args: { meses_atras?: number }
         Returns: {
@@ -731,6 +760,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "admin" | "staff" | "user"
       conversion_probability: "baixa" | "media" | "alta" | "muito_alta"
       purchase_preference:
         | "a_vista"
@@ -872,6 +902,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "staff", "user"],
       conversion_probability: ["baixa", "media", "alta", "muito_alta"],
       purchase_preference: [
         "a_vista",
