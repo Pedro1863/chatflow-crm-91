@@ -156,24 +156,29 @@ export function InactivityPopup() {
       const lastMsgTime = lastMessages.get(contato.id);
       if (!lastMsgTime) continue;
 
-      // Cliente: bloqueia popup, EXCETO se mandou nova mensagem depois do último ciclo do popup.
-      // Usa popup_ciclo_data do leads_pipeline (atualizado pelo RPC ao virar cliente).
+      // Reengajamento: independe do status_funil (o trigger do banco já pode ter
+      // devolvido o contato para 'novo_lead'). A âncora confiável é a última venda.
+      const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
+      const lastMsgMs = new Date(lastMsgTime).getTime();
       let clienteReengajou = false;
-      if (contato.status_funil === "cliente") {
-        const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
-        if (!lastOrderTs) continue; // sem venda registrada → bloqueia por segurança
-        const lastMsgMs = new Date(lastMsgTime).getTime();
+      if (lastOrderTs) {
         const lastOrderMs = new Date(lastOrderTs).getTime();
-        if (lastMsgMs <= lastOrderMs) continue; // mensagem é anterior à última venda → bloqueado
-        clienteReengajou = true; // mandou msg após a última venda → reengajou
+        if (lastMsgMs > lastOrderMs) {
+          clienteReengajou = true; // mandou msg após a última venda → ciclo reinicia
+        } else if (contato.status_funil === "cliente") {
+          continue; // ainda é cliente e não falou depois da venda → bloqueado
+        }
+      } else if (contato.status_funil === "cliente") {
+        continue; // marcado como cliente sem venda registrada → bloqueia por segurança
       }
 
-      const elapsed = now - new Date(lastMsgTime).getTime();
+      const elapsed = now - lastMsgMs;
       if (elapsed < INACTIVITY_MS) continue;
 
       const state = phoneState.get(contato.telefone);
 
       if (state && !clienteReengajou) {
+
         const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > new Date(lastMsgTime).getTime();
 
         if (pipelineAfterMsg) {
