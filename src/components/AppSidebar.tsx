@@ -1,5 +1,6 @@
-import { MessageSquare, BarChart3, Users, Settings, TrendingUp, Zap } from "lucide-react";
+import { MessageSquare, BarChart3, Users, Settings, TrendingUp, Zap, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +11,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+
 
 const items = [
   { title: "Conversas", url: "/", icon: MessageSquare },
