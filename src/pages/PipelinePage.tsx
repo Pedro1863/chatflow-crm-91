@@ -86,6 +86,10 @@ const PipelinePage = () => {
       {
         onSuccess: () => {
           toast.success(`Movido para ${statusLabels[newStage]}`);
+          if (newStage === "cliente") {
+            markConverted.mutate({ telefone: contato.telefone, nome: contato.nome });
+            return;
+          }
           const etapa = stageToEtapa[newStage] || stageToEtapa[oldStage] || "primeiro_contato_sem_resposta";
           registerAttempt.mutate({
             telefone: contato.telefone,
@@ -99,6 +103,7 @@ const PipelinePage = () => {
       }
     );
   };
+
 
   const counts = {
     novos: normalizedContatos.filter((c) => !c._isRecompra).length,
