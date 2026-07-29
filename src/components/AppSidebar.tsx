@@ -1,6 +1,5 @@
-import { MessageSquare, BarChart3, Users, Settings, TrendingUp, Zap, LogOut } from "lucide-react";
+import { MessageSquare, BarChart3, Users, Settings, TrendingUp, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useAuth } from "@/hooks/use-auth";
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +10,6 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-
 
 const items = [
   { title: "Conversas", url: "/", icon: MessageSquare },
@@ -24,8 +22,6 @@ const items = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { signOut } = useAuth();
-
 
   return (
     <Sidebar collapsible="icon">
@@ -59,19 +55,9 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  onClick={signOut}
-                  className="hover:bg-sidebar-accent transition-all duration-200"
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {!collapsed && <span>Sair</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
       </SidebarContent>
     </Sidebar>
   );
