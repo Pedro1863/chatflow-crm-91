@@ -11,16 +11,19 @@ const statusLabels: Record<string, string> = {
   novo_lead: "Sem Produto",
   contato_iniciado: "Contato Iniciado",
   proposta_enviada: "Proposta Enviada",
+  cliente: "Cliente",
 };
 
 const statusColors: Record<string, string> = {
   novo_lead: "bg-chart-2/20 text-chart-2",
   contato_iniciado: "bg-chart-3/20 text-chart-3",
   proposta_enviada: "bg-chart-4/20 text-chart-4",
+  cliente: "bg-primary/20 text-primary",
 };
 
-// Stages do funil (cliente NÃO é uma coluna — é uma transição que reinicia o ciclo)
-const stages = ["novo_lead", "contato_iniciado", "proposta_enviada"];
+// Stages do funil. "Cliente" é preenchido automaticamente pelo RPC/Bling
+// e reinicia para "Sem Produto" quando a pessoa manda uma nova mensagem.
+const stages = ["novo_lead", "contato_iniciado", "proposta_enviada", "cliente"];
 
 const stageToEtapa: Record<string, string> = {
   contato_iniciado: "primeiro_contato_sem_resposta",
