@@ -156,29 +156,24 @@ export function InactivityPopup() {
       const lastMsgTime = lastMessages.get(contato.id);
       if (!lastMsgTime) continue;
 
-      // Reengajamento: independe do status_funil (o trigger do banco já pode ter
-      // devolvido o contato para 'novo_lead'). A âncora confiável é a última venda.
-      const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
-      const lastMsgMs = new Date(lastMsgTime).getTime();
+      // Cliente: bloqueia popup, EXCETO se mandou nova mensagem depois do último ciclo do popup.
+      // Usa popup_ciclo_data do leads_pipeline (atualizado pelo RPC ao virar cliente).
       let clienteReengajou = false;
-      if (lastOrderTs) {
+      if (contato.status_funil === "cliente") {
+        const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
+        if (!lastOrderTs) continue; // sem venda registrada → bloqueia por segurança
+        const lastMsgMs = new Date(lastMsgTime).getTime();
         const lastOrderMs = new Date(lastOrderTs).getTime();
-        if (lastMsgMs > lastOrderMs) {
-          clienteReengajou = true; // mandou msg após a última venda → ciclo reinicia
-        } else if (contato.status_funil === "cliente") {
-          continue; // ainda é cliente e não falou depois da venda → bloqueado
-        }
-      } else if (contato.status_funil === "cliente") {
-        continue; // marcado como cliente sem venda registrada → bloqueia por segurança
+        if (lastMsgMs <= lastOrderMs) continue; // mensagem é anterior à última venda → bloqueado
+        clienteReengajou = true; // mandou msg após a última venda → reengajou
       }
 
-      const elapsed = now - lastMsgMs;
+      const elapsed = now - new Date(lastMsgTime).getTime();
       if (elapsed < INACTIVITY_MS) continue;
 
       const state = phoneState.get(contato.telefone);
 
       if (state && !clienteReengajou) {
-
         const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > new Date(lastMsgTime).getTime();
 
         if (pipelineAfterMsg) {
@@ -217,13 +212,6 @@ export function InactivityPopup() {
   const isOpen = !dismissed && currentItem !== null;
   const total = queue.length;
 
-  const etapaToStatus: Record<string, string> = {
-    primeiro_contato_sem_resposta: "contato_iniciado",
-    proposta_sem_resposta: "proposta_enviada",
-    negociacao_sem_resposta: "proposta_enviada",
-    frete_sem_resposta: "proposta_enviada",
-  };
-
   const handleSelect = (etapa: string) => {
     if (!currentItem) return;
     registerAttempt.mutate(
@@ -236,22 +224,12 @@ export function InactivityPopup() {
         origem_tentativa: "popup",
       },
       {
-        onSuccess: async (data) => {
+        onSuccess: (data) => {
           // Mark popup as shown for this entry
           if (data?.id) {
             markPopupShown.mutate({ telefone: currentItem.telefone, leadId: data.id });
           }
-          // Move o contato no pipeline conforme a etapa escolhida
-          const novoStatus = etapaToStatus[etapa];
-          if (novoStatus) {
-            await supabase
-              .from("contatos")
-              .update({ status_funil: novoStatus })
-              .eq("id", currentItem.contatoId);
-            qc.invalidateQueries({ queryKey: ["contatos"] });
-          }
           toast.success(`Tentativa registrada para ${currentItem.nome || currentItem.telefone}`);
-
           setProcessedPhones((prev) => {
                     const next = new Set(prev).add(currentItem.telefone);
                     sessionStorage.setItem("inactivity_popup_processed", JSON.stringify({ phones: [...next], ts: Date.now() }));
