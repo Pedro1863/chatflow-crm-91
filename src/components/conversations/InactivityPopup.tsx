@@ -156,24 +156,18 @@ export function InactivityPopup() {
       const lastMsgTime = lastMessages.get(contato.id);
       if (!lastMsgTime) continue;
 
-      // Reengajamento: independe do status_funil (o trigger do banco já pode ter
-      // devolvido o contato para 'novo_lead'). A âncora confiável é a última venda.
+      // Reengajamento: a âncora confiável é a última venda registrada.
+      // Se o cliente mandou mensagem depois da última venda, o ciclo reinicia
+      // e nenhum bloqueio antigo de pipeline se aplica.
       const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
       const lastMsgMs = new Date(lastMsgTime).getTime();
-      let clienteReengajou = false;
-      if (lastOrderTs) {
-        const lastOrderMs = new Date(lastOrderTs).getTime();
-        if (lastMsgMs > lastOrderMs) {
-          clienteReengajou = true; // mandou msg após a última venda → ciclo reinicia
-        } else if (contato.status_funil === "cliente") {
-          continue; // ainda é cliente e não falou depois da venda → bloqueado
-        }
-      } else if (contato.status_funil === "cliente") {
-        continue; // marcado como cliente sem venda registrada → bloqueia por segurança
-      }
+      const clienteReengajou = lastOrderTs
+        ? lastMsgMs > new Date(lastOrderTs).getTime()
+        : false;
 
       const elapsed = now - lastMsgMs;
       if (elapsed < INACTIVITY_MS) continue;
+
 
       const state = phoneState.get(contato.telefone);
 
