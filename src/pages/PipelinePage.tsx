@@ -159,18 +159,16 @@ const PipelinePage = () => {
                         → {statusLabels[targetStage]}
                       </button>
                     ))}
-                  <button
-                    onClick={() =>
-                      markConverted.mutate(
-                        { telefone: contato.telefone, nome: contato.nome },
-                        { onSuccess: () => toast.success("Marcado como convertido") }
-                      )
-                    }
-                    className="text-[10px] px-2 py-0.5 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-                  >
-                    ✓ Convertido
-                  </button>
+                  {stage !== "cliente" && (
+                    <button
+                      onClick={() => handleMoveToStage(contato, "cliente")}
+                      className="text-[10px] px-2 py-0.5 rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                    >
+                      ✓ Convertido
+                    </button>
+                  )}
                 </div>
+
               </div>
             ))}
             {contatosByStage[stage].length === 0 && (
