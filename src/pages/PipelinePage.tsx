@@ -61,11 +61,12 @@ const PipelinePage = () => {
     () =>
       contatos.map((c) => ({
         ...c,
-        _displayStage: c.status_funil === "cliente" ? "novo_lead" : c.status_funil,
+        _displayStage: stages.includes(c.status_funil) ? c.status_funil : "novo_lead",
         _isRecompra: !!conversionMap?.get(c.telefone),
       })),
     [contatos, conversionMap]
   );
+
 
   const filtered = normalizedContatos.filter((c) =>
     tab === "recompras" ? c._isRecompra : !c._isRecompra
