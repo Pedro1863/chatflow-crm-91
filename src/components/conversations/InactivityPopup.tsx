@@ -217,6 +217,13 @@ export function InactivityPopup() {
   const isOpen = !dismissed && currentItem !== null;
   const total = queue.length;
 
+  const etapaToStatus: Record<string, string> = {
+    primeiro_contato_sem_resposta: "contato_iniciado",
+    proposta_sem_resposta: "proposta_enviada",
+    negociacao_sem_resposta: "proposta_enviada",
+    frete_sem_resposta: "proposta_enviada",
+  };
+
   const handleSelect = (etapa: string) => {
     if (!currentItem) return;
     registerAttempt.mutate(
@@ -229,12 +236,22 @@ export function InactivityPopup() {
         origem_tentativa: "popup",
       },
       {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           // Mark popup as shown for this entry
           if (data?.id) {
             markPopupShown.mutate({ telefone: currentItem.telefone, leadId: data.id });
           }
+          // Move o contato no pipeline conforme a etapa escolhida
+          const novoStatus = etapaToStatus[etapa];
+          if (novoStatus) {
+            await supabase
+              .from("contatos")
+              .update({ status_funil: novoStatus })
+              .eq("id", currentItem.contatoId);
+            qc.invalidateQueries({ queryKey: ["contatos"] });
+          }
           toast.success(`Tentativa registrada para ${currentItem.nome || currentItem.telefone}`);
+
           setProcessedPhones((prev) => {
                     const next = new Set(prev).add(currentItem.telefone);
                     sessionStorage.setItem("inactivity_popup_processed", JSON.stringify({ phones: [...next], ts: Date.now() }));
