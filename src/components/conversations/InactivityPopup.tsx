@@ -156,40 +156,25 @@ export function InactivityPopup() {
       const lastMsgTime = lastMessages.get(contato.id);
       if (!lastMsgTime) continue;
 
-      // Reengajamento: a âncora confiável é a última venda registrada.
-      // Se o cliente mandou mensagem depois da última venda, o ciclo reinicia
-      // e nenhum bloqueio antigo de pipeline se aplica.
-      const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
       const lastMsgMs = new Date(lastMsgTime).getTime();
-      const clienteReengajou = lastOrderTs
-        ? lastMsgMs > new Date(lastOrderTs).getTime()
-        : false;
-
       const elapsed = now - lastMsgMs;
       if (elapsed < INACTIVITY_MS) continue;
 
+      // POSSIBILIDADE 1 — o Bling/RPC registrou um pedido depois da mensagem:
+      // o card já foi para "Cliente" automaticamente → popup não aparece.
+      const lastOrderTs = customersLastOrder?.get(contato.telefone) ?? null;
+      if (lastOrderTs && new Date(lastOrderTs).getTime() >= lastMsgMs) continue;
+      if (contato.status_funil === "cliente") continue;
 
+      // POSSIBILIDADE 2 — eu já marquei uma etapa manualmente (ou já respondi
+      // o popup) depois da última mensagem do cliente → popup não aparece.
       const state = phoneState.get(contato.telefone);
-
-      if (state && !clienteReengajou) {
-
-        const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > new Date(lastMsgTime).getTime();
-
-        if (pipelineAfterMsg) {
-          // There's a pipeline entry after the last incoming message
-          // If it was saved manually → popup blocked
-          if (state.salvoManualmente) continue;
-
-          // If popup already shown for this cycle AND no new client message since → skip
-          if (state.popupExibido && state.popupCicloData) {
-            const cicloDate = new Date(state.popupCicloData + "T23:59:59").getTime();
-            const lastMsgDate = new Date(lastMsgTime).getTime();
-            // Only re-show if client sent a NEW message AFTER the last popup cycle
-            if (lastMsgDate <= cicloDate) continue;
-          }
-        }
+      if (state && state.dataInteracao) {
+        const pipelineAfterMsg = new Date(state.dataInteracao).getTime() > lastMsgMs;
+        if (pipelineAfterMsg && (state.salvoManualmente || state.popupExibido)) continue;
       }
 
+      // POSSIBILIDADE 3 — nada registrado desde a mensagem → popup entra.
       eligible.push({
         contatoId: contato.id,
         nome: contato.nome,
