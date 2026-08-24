@@ -183,7 +183,9 @@ export function InactivityPopup() {
 
           // If popup already shown for this cycle AND no new client message since → skip
           if (state.popupExibido && state.popupCicloData) {
-            const cicloDate = new Date(state.popupCicloData + "T23:59:59").getTime();
+            // popup_ciclo_data é gravado em UTC (CURRENT_DATE / toISOString), então
+            // comparamos o fim do dia em UTC — usar hora local causava um desvio de 3h.
+            const cicloDate = new Date(state.popupCicloData + "T23:59:59Z").getTime();
             const lastMsgDate = new Date(lastMsgTime).getTime();
             // Only re-show if client sent a NEW message AFTER the last popup cycle
             if (lastMsgDate <= cicloDate) continue;
