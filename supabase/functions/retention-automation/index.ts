@@ -126,6 +126,8 @@ serve(async (req) => {
       }
     }
 
+    console.log(`[rodada ${chain + 1}] ${pendingSends.length} clientes na fila`);
+
     // 6. Send, respecting time budget
     let sentCount = 0;
     let failCount = 0;
@@ -147,6 +149,7 @@ serve(async (req) => {
 
       const phone = normalizeBrazilPhoneE164(pending.telefone);
       if (!isValidBrazilPhoneE164(phone)) {
+        console.log(`pulada (telefone inválido): ${pending.nome} ${pending.telefone}`);
         await markAttempted(pending.customer_id);
         results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "invalid_phone" });
         continue;
@@ -177,6 +180,7 @@ serve(async (req) => {
         }).select("id").single();
         const mensagemId = logRow?.id || null;
 
+        console.log(`enviando: ${pending.nome} ${phone} (tentativa ${attempt})`);
         try {
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), N8N_TIMEOUT_MS);
@@ -253,12 +257,14 @@ serve(async (req) => {
       }
 
       sentCount++;
+      console.log(`concluída: ${pending.nome} ${phone}`);
       results.push({ customer_id: pending.customer_id, zone: pending.zone, action: "sent" });
     }
 
     // 7. Continue in a new run if there are still customers left
     const remaining = pendingSends.length - processed;
     let continued = false;
+    console.log(`[rodada ${chain + 1}] fim: ${sentCount} enviadas, ${failCount} falhas, ${remaining} restantes`);
     if (remaining > 0 && chain < MAX_CHAIN) {
       const nextCall = fetch(`${SUPABASE_URL}/functions/v1/retention-automation`, {
         method: "POST",
