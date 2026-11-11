@@ -50,7 +50,7 @@ serve(async (req) => {
               .eq("telefone", telefone)
               .eq("direcao", "saida")
               .is("whatsapp_message_id", null)
-              .ilike("mensagem", "[Template:%")
+              .eq("vendedor", "automação")
               .order("timestamp", { ascending: false })
               .limit(1);
 

@@ -169,6 +169,7 @@ serve(async (req) => {
 
       let delivered = false;   // n8n accepted OR timed out (probably sent)
       let lastError = "";
+      let lastMensagemId: string | null = null;
 
       for (let attempt = 1; attempt <= MAX_HTTP_ATTEMPTS; attempt++) {
         if (!isFirstSend) await sleep(INTERVAL_MS);
@@ -179,6 +180,7 @@ serve(async (req) => {
           status: "pendente", erro: attempt > 1 ? `Tentativa ${attempt}/${MAX_HTTP_ATTEMPTS}` : null,
         }).select("id").single();
         const mensagemId = logRow?.id || null;
+        lastMensagemId = mensagemId;
 
         console.log(`enviando: ${pending.nome} ${phone} (tentativa ${attempt})`);
         try {
@@ -246,9 +248,18 @@ serve(async (req) => {
             .eq("key", `template_msg_${templateName}`).maybeSingle();
           const customMsg = msgSetting?.value?.trim();
           const messageText = customMsg || `[Template: ${templateName.replace(/_/g, " ")}]`;
+          // If whatsapp-status already linked the Meta ID to the log (callback arrived
+          // before n8n answered), copy it so the chat checkmarks still update.
+          let wamid: string | null = null;
+          if (lastMensagemId) {
+            const { data: lg } = await supabase.from("logs_envio_template")
+              .select("whatsapp_message_id").eq("id", lastMensagemId).maybeSingle();
+            wamid = lg?.whatsapp_message_id || null;
+          }
           await supabase.from("mensagens").insert({
             contato_id: contatoId, telefone: phone, mensagem: messageText,
             direcao: "saida", vendedor: "automação", status: "sent",
+            whatsapp_message_id: wamid,
           });
           await supabase.from("contatos").update({ ultima_interacao: new Date().toISOString() }).eq("id", contatoId);
         }
