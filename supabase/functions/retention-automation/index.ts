@@ -204,14 +204,14 @@ serve(async (req) => {
             continue; // clear error → retry
           }
 
-          if (mensagemId) await supabase.from("logs_envio_template").update({ status: "sucesso" }).eq("id", mensagemId).eq("status", "pendente");
+          if (mensagemId) await supabase.from("logs_envio_template").update({ status: "sucesso" }).eq("id", mensagemId);
           delivered = true;
           break;
         } catch (err: any) {
           if (err?.name === "AbortError") {
             // n8n is slow but usually DID send. Never retry, to avoid duplicates.
             lastError = `Sem resposta do n8n em ${N8N_TIMEOUT_MS / 1000}s (sem nova tentativa para evitar duplicidade)`;
-            if (mensagemId) await supabase.from("logs_envio_template").update({ status: "sucesso", erro: lastError }).eq("id", mensagemId).eq("status", "pendente");
+            if (mensagemId) await supabase.from("logs_envio_template").update({ status: "sucesso", erro: lastError }).eq("id", mensagemId);
             delivered = true;
             break;
           }
