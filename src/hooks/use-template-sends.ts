@@ -191,12 +191,13 @@ export function useSendTemplates() {
             .eq("id", contact.customer_id)
             .neq("telefone", normalizedPhone);
 
-          // Update log to success
+          // Update log to success (only if no delivery status arrived yet)
           if (mensagemId) {
             await supabase
               .from("logs_envio_template" as any)
               .update({ status: "sucesso" })
-              .eq("id", mensagemId);
+              .eq("id", mensagemId)
+              .eq("status", "pendente");
           }
 
           // ── Create conversation message in chat ──
@@ -238,6 +239,18 @@ export function useSendTemplates() {
               const templateLabel = params.template.replace(/_/g, " ");
               const messageText = customMsg || `[Template: ${templateLabel}]`;
 
+              // If whatsapp-status already linked the Meta ID to the log (it usually
+              // arrives before n8n answers), copy it so the chat checkmarks update.
+              let wamid: string | null = null;
+              if (mensagemId) {
+                const { data: lg } = await supabase
+                  .from("logs_envio_template" as any)
+                  .select("whatsapp_message_id")
+                  .eq("id", mensagemId)
+                  .maybeSingle();
+                wamid = (lg as any)?.whatsapp_message_id || null;
+              }
+
               await supabase.from("mensagens").insert({
                 contato_id: contatoId,
                 telefone: normalizedPhone,
@@ -245,6 +258,7 @@ export function useSendTemplates() {
                 direcao: "saida",
                 vendedor: "automação",
                 status: "sent",
+                whatsapp_message_id: wamid,
               });
 
               // Update ultima_interacao

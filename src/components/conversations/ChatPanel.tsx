@@ -362,6 +362,8 @@ export function ChatPanel({ contatoId, onToggleDetails }: Props) {
                       <CheckCheck className="h-3.5 w-3.5 text-primary" />
                     ) : msg.status === "delivered" ? (
                       <CheckCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                    ) : msg.status === "failed" ? (
+                      <X className="h-3.5 w-3.5 text-destructive" aria-label="Não entregue" />
                     ) : (
                       <Check className="h-3.5 w-3.5 text-muted-foreground" />
                     )}
