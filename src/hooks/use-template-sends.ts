@@ -238,6 +238,18 @@ export function useSendTemplates() {
               const templateLabel = params.template.replace(/_/g, " ");
               const messageText = customMsg || `[Template: ${templateLabel}]`;
 
+              // n8n usually links the Meta ID to the log before answering,
+              // so copy it to the chat message to keep checkmarks updating.
+              let wamid: string | null = null;
+              if (mensagemId) {
+                const { data: lg } = await supabase
+                  .from("logs_envio_template" as any)
+                  .select("whatsapp_message_id")
+                  .eq("id", mensagemId)
+                  .maybeSingle();
+                wamid = (lg as any)?.whatsapp_message_id || null;
+              }
+
               await supabase.from("mensagens").insert({
                 contato_id: contatoId,
                 telefone: normalizedPhone,
@@ -245,6 +257,7 @@ export function useSendTemplates() {
                 direcao: "saida",
                 vendedor: "automação",
                 status: "sent",
+                whatsapp_message_id: wamid,
               });
 
               // Update ultima_interacao
